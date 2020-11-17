@@ -19,7 +19,7 @@ struct Size
 };
 
 template<typename TSize>
-struct Location
+struct Pos
 {
 	TSize x;
 	TSize y;
