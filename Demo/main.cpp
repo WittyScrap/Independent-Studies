@@ -1,4 +1,14 @@
 #include "Window.h"
+#include "ParticleRenderer.h"
+
+/// <summary>
+/// Constant buffer definition for default shader.
+/// </summary>
+__declspec(align(16))
+struct ConstantBuffer
+{
+	float4 color;
+};
 
 // Main entry point for demo
 //
@@ -6,6 +16,12 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 {
 	Window canvas(1270, 720, 100, 100, L"PSO - Demonstration");
 	canvas.Show();
+
+	ConstantBuffer cbuff = { { 1, 1, 1, 1 } };
+
+	ParticleRenderer<> renderer(canvas.GetHandle(), canvas.GetWindowSize());
+	renderer.LoadShader(L"default.hlsl");
+	renderer.CreateConstantBuffer<ConstantBuffer>(cbuff);
 
 	UINT msg;
 

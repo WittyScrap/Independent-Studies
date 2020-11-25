@@ -3,60 +3,82 @@
 #include "DataStructures.h"
 
 
-// Handles creating, running, and deleting
-// windows.
+/// <summary>
+/// Handles the creation, execution, event 
+/// </summary>
 class Window
 {
 public:
-	// Creates a window using a specific width, height,
-	// location, and title.
-	//
+	/// <summary>
+	/// Creates a new window using a given width,
+	/// height, screen position, and title.
+	/// </summary>
+	/// <param name="width">The width of the window.</param>
+	/// <param name="height">The height of the window.</param>
+	/// <param name="x">The horizontal position of the window.</param>
+	/// <param name="y">The vertical position of the window.</param>
+	/// <param name="title">The window title.</param>
 	Window(u16 width, u16 height, u16 x, u16 y, const wchar_t* title);
 
 	// Destructor
 	//
 	~Window();
 
-	// Retrieves the current size of this window.
-	//
+	/// <summary>
+	/// Retrieves the current size of the window.
+	/// </summary>
+	/// <returns>The size of the window.</returns>
 	const __forceinline Size<u16> GetWindowSize() const
 	{
 		return { this->width, this->height };
 	}
 
-	// Retrieves the current location of this window.
-	//
+	/// <summary>
+	/// Retrieves the current location of the window.
+	/// </summary>
+	/// <returns>The location of the window.</returns>
 	const __forceinline Pos<u16> GetWindowLocation() const
 	{
 		return { this->x, this->y };
 	}
 
-	// Resizes the window to a specific size.
-	//
+	/// <summary>
+	/// Resizes the window to a new width and height.
+	/// </summary>
+	/// <param name="width">The new window width.</param>
+	/// <param name="height">The new window height.</param>
 	void ResizeWindow(u16 width, u16 height);
 
-	// Polls the window for a message and returns it to be
-	// handled.
-	//
+	/// <summary>
+	/// Polls the next message from this window, returns true
+	/// if a message was received, false otherwise - usually,
+	/// this means that the window was destroyed.
+	/// </summary>
+	/// <param name="oMsg">The contents of the polled message.</param>
+	/// <returns>A flag that indicates whether or not a message was polled.</returns>
 	bool PollMessage(UINT* oMsg);
 
-	// The generated window's handle.
-	//
+	/// <summary>
+	/// The WinAPI handle to this window.
+	/// </summary>
+	/// <returns>A HWND for this window.</returns>
 	const __forceinline HWND GetHandle() 
 	{ 
 		return this->handle;
 	}
 
-	// Displays the window.
-	//
+	/// <summary>
+	/// Makes the window visible.
+	/// </summary>
 	__forceinline void Show() 
 	{
 		ShowWindow(this->handle, SW_NORMAL);
 	}
 
 private:
-	// WinProc callback dispatcher function.
-	//
+	/// <summary>
+	/// Static window callback dispatcher.
+	/// </summary>
 	static LRESULT CALLBACK WndProcHandler(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam);
 
 	u16 width;
