@@ -148,7 +148,7 @@ private:
 /// <param name="target">The target window handle.</param>
 template<typename TPoint>
 inline ParticleRenderer<TPoint>::ParticleRenderer(HWND target, const Size<u16> size)
-    : Target{ target } 
+    : Target{ target }, vertBufferLen{ 0 }
 {
 	UINT flags = D3D_FLAGS;
 
@@ -314,29 +314,30 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
 
     if (message != NULL)
     {
+        MessageBoxA(NULL, "Shader compilation failed, please check Output panel for more information.", "Shader compilation error", MB_OK);
         OutputDebugStringA((const char*)message->GetBufferPointer());
     }
 
     CHECK(SUCCEEDED(hr));
 
-    TRY(this->d3dDevice->CreateVertexShader(
+    CHECK(SUCCEEDED(this->d3dDevice->CreateVertexShader(
         this->d3dVertexPixelBytecode->GetBufferPointer(),
         this->d3dVertexPixelBytecode->GetBufferSize(), NULL,
         this->d3dVertexShader.GetAddressOf()
-    ));
+    )));
 
     // Create input vertex descriptor to describe what the input vertex structure
     // should look like in the HLSL shader.
     D3D11_INPUT_ELEMENT_DESC vert[] =
     {
         //    Name    | SI |             Format              | IS | Offset |          Input type          | Instance Data    //
-        { "POSITION"  , 0  , DXGI_FORMAT_R32G32B32_FLOAT     , 0  ,   0    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
-        { "COLOR"     , 0  , DXGI_FORMAT_R32G32B32A32_FLOAT  , 0  ,   12   ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
-    //  { "TEXCOORD"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   28   ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        }
+        { "POSITION"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   0    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
+        { "COLOR"     , 0  , DXGI_FORMAT_R32G32B32A32_FLOAT  , 0  ,   8    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
+    //  { "TEXCOORD"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   x    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        }
     };
 
-    TRY(this->d3dDevice->CreateInputLayout(vert, ARRAYSIZE(vert), this->d3dVertexPixelBytecode->GetBufferPointer(),
-        this->d3dVertexPixelBytecode->GetBufferSize(), this->d3dInputLayout.GetAddressOf()));
+    CHECK(SUCCEEDED(this->d3dDevice->CreateInputLayout(vert, ARRAYSIZE(vert), this->d3dVertexPixelBytecode->GetBufferPointer(),
+        this->d3dVertexPixelBytecode->GetBufferSize(), this->d3dInputLayout.GetAddressOf())));
 
     this->d3dVertexPixelBytecode->Release();
     this->d3dDeviceContext->IASetInputLayout(this->d3dInputLayout.Get());
@@ -351,16 +352,17 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
 
     if (message != NULL)
     {
+        MessageBoxA(NULL, "Shader compilation failed, please check Output panel for more information.", "Shader compilation error", MB_OK);
         OutputDebugStringA((const char*)message->GetBufferPointer());
     }
 
     CHECK(SUCCEEDED(hr));
 
-    TRY(this->d3dDevice->CreatePixelShader(
+    CHECK(SUCCEEDED(this->d3dDevice->CreatePixelShader(
         this->d3dVertexPixelBytecode->GetBufferPointer(),
         this->d3dVertexPixelBytecode->GetBufferSize(), NULL,
         this->d3dPixelShader.GetAddressOf()
-    ));
+    )));
 
     this->d3dDeviceContext->VSSetShader(this->d3dVertexShader.Get(), NULL, 0);
     this->d3dDeviceContext->PSSetShader(this->d3dPixelShader.Get(), NULL, 0);
@@ -377,7 +379,7 @@ inline void ParticleRenderer<TPoint>::SetVectorField(const TPoint* const vData, 
     static constexpr UINT offset = 0;
 
     D3D11_BUFFER_DESC vbDesc = { 0 };
-    vbDesc.ByteWidth = sizeof(TPoint) * lData;
+    vbDesc.ByteWidth = (UINT)(sizeof(TPoint) * lData);
     vbDesc.Usage = D3D11_USAGE_DEFAULT;
     vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vbDesc.MiscFlags = 0;
@@ -392,7 +394,7 @@ inline void ParticleRenderer<TPoint>::SetVectorField(const TPoint* const vData, 
     );
 
     this->d3dDeviceContext->IASetVertexBuffers(0, 1, this->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
-    this->vertBufferLen = lData;
+    this->vertBufferLen = (UINT)lData;
 }
 
 /// <summary>
@@ -443,9 +445,6 @@ inline void ParticleRenderer<TPoint>::RenderAndPresent()
 template<typename TPoint>
 inline void ParticleRenderer<TPoint>::__f_inl_Render() const
 {
-    constexpr UINT stride = sizeof(Vec2);
-    constexpr UINT offset = 0;
-
     constexpr float clear[4] = { 0, 0, 0, 0 };
 
     this->d3dDeviceContext->ClearRenderTargetView(this->d3dRenderTarget.Get(), clear);
@@ -550,9 +549,12 @@ inline void ParticleRenderer<TPoint>::CreateConstantBuffer(TCBufferType initialD
 	cbuff.Usage = D3D11_USAGE_DEFAULT;
 	cbuff.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-	// As we do not have a valid subresource at the moment we will
-	// simply create the buffer without providing one.
-	this->d3dDevice->CreateBuffer(&cbuff, NULL, this->d3dConstantBuffer.GetAddressOf());
+    D3D11_SUBRESOURCE_DATA init = { 0 };
+    init.pSysMem = &initialData;
+
+	// Create the new constant buffer and provide initialization data
+    // as subresource data.
+	this->d3dDevice->CreateBuffer(&cbuff, &init, this->d3dConstantBuffer.GetAddressOf());
 
 	// Set our constant buffer on the Vertex and Pixel shader pipeline stages.
 	this->d3dDeviceContext->VSSetConstantBuffers(0, 1, this->d3dConstantBuffer.GetAddressOf());

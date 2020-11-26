@@ -1,6 +1,7 @@
 // Constant buffer representation
 cbuffer ConstantBuffer : register(b0)
 {
+	float4 scale;
     float4 color;
 };
 
@@ -11,7 +12,7 @@ cbuffer ConstantBuffer : register(b0)
  */
 struct vin
 {
-	float3 position : POSITION;
+	float2 position : POSITION;
     float4 color    : COLOR;
 //  float2 texcoord : TEXCOORD;
 };
@@ -36,7 +37,7 @@ vout vert(vin i)
 {
 	vout o;
 
-	o.position = float4(i.position, 1);
+	o.position = float4(i.position, 0, 1);
     o.position.xyzw /= o.position.w;
     o.color = i.color;
 
@@ -50,6 +51,5 @@ vout vert(vin i)
  */
 float4 pixel(vout i) : SV_Target
 {
-    clip(i.color.a - 0.5f); // Discard transparent pixels.
 	return color;
 }

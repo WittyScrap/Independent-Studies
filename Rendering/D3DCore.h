@@ -52,15 +52,6 @@ using namespace Microsoft::WRL;
 template<typename TCOMType>
 using com = ComPtr<TCOMType>;
 
-/// <summary>
-/// Default input vertex layout.
-/// </summary>
-struct Vec2
-{
-	u16 x;
-	u16 y;
-	u16 z;
-};
 
 /// <summary>
 /// 2-dimensional float
@@ -177,4 +168,32 @@ struct float4x4
 		o.M43 = a.M43 * (1 - t) + b.M43 * t;
 		o.M44 = a.M44 * (1 - t) + b.M44 * t;
 	}
+};
+
+/// <summary>
+/// Default input vertex layout.
+/// </summary>
+struct Vec2
+{
+	union
+	{
+		struct
+		{
+			float x;
+			float y;
+		};
+		float2 pos;
+	};
+
+	union
+	{
+		struct
+		{
+			float r;
+			float g;
+			float b;
+			float a;
+		};
+		float4 color;
+	};
 };
