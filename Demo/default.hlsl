@@ -37,8 +37,7 @@ vout vert(vin i)
 {
 	vout o;
 
-	o.position = float4(i.position, 0, 1);
-    o.position.xyzw /= o.position.w;
+	o.position = float4((i.position / scale.xy) * 2 - 1, 0, 1);
     o.color = i.color;
 
 	return o;
@@ -51,5 +50,5 @@ vout vert(vin i)
  */
 float4 pixel(vout i) : SV_Target
 {
-	return color;
+	return i.color;
 }

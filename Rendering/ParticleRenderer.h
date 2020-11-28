@@ -460,7 +460,7 @@ inline void ParticleRenderer<TPoint>::__f_inl_Render() const
 template<typename TPoint>
 inline void ParticleRenderer<TPoint>::__f_inl_Present() const
 {
-    this->dxgiSwapChain->Present(0, 0);
+    this->dxgiSwapChain->Present(1, 0);
 }
 
 /// <summary>

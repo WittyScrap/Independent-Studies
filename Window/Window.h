@@ -75,6 +75,14 @@ public:
 		ShowWindow(this->handle, SW_NORMAL);
 	}
 
+	/// <summary>
+	/// Resends a paint event.
+	/// </summary>
+	__forceinline void ForceRepaint()
+	{
+		InvalidateRect(this->handle, NULL, false);
+	}
+
 private:
 	/// <summary>
 	/// Static window callback dispatcher.
@@ -88,6 +96,5 @@ private:
 	u16 y;
 
 	HWND handle;
-	UINT lastMsg;
 
 };
