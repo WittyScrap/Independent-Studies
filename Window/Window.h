@@ -18,7 +18,7 @@ public:
 	/// <param name="x">The horizontal position of the window.</param>
 	/// <param name="y">The vertical position of the window.</param>
 	/// <param name="title">The window title.</param>
-	Window(u16 width, u16 height, u16 x, u16 y, const wchar_t* title);
+	Window(HWND parent, u16 width, u16 height, u16 x, u16 y, const wchar_t* title);
 
 	// Destructor
 	//
@@ -56,7 +56,15 @@ public:
 	/// </summary>
 	/// <param name="oMsg">The contents of the polled message.</param>
 	/// <returns>A flag that indicates whether or not a message was polled.</returns>
-	bool PollMessage(UINT* oMsg);
+	bool PollMessage(MSG* oMsg);
+
+	/// <summary>
+	/// Peeks at the next message in the queue and returns it.
+	/// This operation is non-blocking. If there are no messages in
+	/// the message queue, an empty message is immediately returned.
+	/// </summary>
+	/// <returns>The message at the top of the queue.</returns>
+	MSG NextMessage();
 
 	/// <summary>
 	/// The WinAPI handle to this window.
@@ -82,6 +90,11 @@ public:
 	{
 		InvalidateRect(this->handle, NULL, false);
 	}
+
+	/// <summary>
+	/// The parent window handle.
+	/// </summary>
+	const HWND parent;
 
 private:
 	/// <summary>

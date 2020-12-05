@@ -4,10 +4,17 @@
 #include "ParticleRenderer.h"
 #include "Random.h"
 
-#define W_WIDTH 1270
-#define W_HEIGHT 720
+#define C_WIDTH 1270
+#define C_HEIGHT 720
+
+#define SIDEBAR_W 250
+
+#define W_WIDTH (C_WIDTH + SIDEBAR_W)
+#define W_HEIGHT (C_HEIGHT)
 
 #define PARTICLE_COUNT_2 4096
+#define INIT_VELOCITY_MAX 50
+#define INIT_VELOCITY (NextInteger() % INIT_VELOCITY_MAX) - (INIT_VELOCITY_MAX / 2)
 
 /// <summary>
 /// Constant buffer definition for default shader.
@@ -38,7 +45,7 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 {
 	for (int i = 0; i < PARTICLE_COUNT_2; i += 2)
 	{
-		particles[i] = { 
+		particles[i] = {
 			{ particles[i].position.x + particles[i].velocity.x, particles[i].position.y + particles[i].velocity.y },
 			particles[i].velocity
 		};
@@ -58,9 +65,9 @@ void InitParticles(Particle particles[PARTICLE_COUNT_2])
 {
 	for (int i = 0; i < PARTICLE_COUNT_2; i += 2)
 	{
-		particles[i] = { 
-			{ (float)(NextInteger() % W_WIDTH), (float)(NextInteger() % W_HEIGHT) },
-			{ (float)(NextInteger() % 100 - 50),(float)(NextInteger() % 100 - 50) }
+		particles[i] = {
+			{ (float)RNG_TO(C_WIDTH), (float)RNG_TO(C_HEIGHT) },
+			{ (float)INIT_VELOCITY,	  (float)INIT_VELOCITY	  }
 		};
 
 		particles[i + 1] = {
@@ -74,10 +81,13 @@ void InitParticles(Particle particles[PARTICLE_COUNT_2])
 //
 int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
-	Window canvas(W_WIDTH, W_HEIGHT, 100, 100, L"PSO - Demonstration");
+	Window main(NULL, W_WIDTH, W_HEIGHT, 100, 100, L"PSO - Demonstration");
+	main.Show();
+
+	Window canvas(main.GetHandle(), C_WIDTH, C_HEIGHT, 0, 0, L"PSO - Demonstration");
 	canvas.Show();
 
-	ConstantBuffer cbuff = { { (float)W_WIDTH, (float)W_HEIGHT, 0, 0 }, { 1, 1, 1, 1 } };
+	ConstantBuffer cbuff = { { (float)C_WIDTH, (float)C_HEIGHT, 0, 0 }, { 1, 1, 1, 1 } };
 
 	ParticleRenderer<> renderer(canvas.GetHandle(), canvas.GetWindowSize());
 	renderer.LoadShader(L"default.hlsl");
@@ -90,11 +100,13 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	InitParticles(reinterpret_cast<Particle*>(buff));
 	renderer.SetVectorField(buff, ARRAYSIZE(buff));
 
-	UINT msg;
+	MSG msg_main;
+	MSG msg_canvas;
 
-	while (canvas.PollMessage(&msg))
+	while (main.PollMessage(&msg_main))
 	{
-		switch (msg)
+		// Switch between canvas messages
+		switch (msg_main.message)
 		{
 			// Update()
 			case WM_PAINT:
@@ -102,9 +114,11 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				UpdateParticles(reinterpret_cast<Particle*>(buff));
 				renderer.UpdateVectorField(buff);
 				renderer.RenderAndPresent();
-				canvas.ForceRepaint();
 				break;
 			}
 		}
+
+		// Force a repaint event
+		canvas.ForceRepaint();
 	}
 }
