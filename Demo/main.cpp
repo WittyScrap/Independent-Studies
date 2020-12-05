@@ -4,6 +4,8 @@
 #include "ParticleRenderer.h"
 #include "Random.h"
 
+#define INPUT_SIZEOF 24Ull
+
 #define C_WIDTH 1270
 #define C_HEIGHT 720
 
@@ -12,7 +14,19 @@
 #define W_WIDTH (C_WIDTH + SIDEBAR_W)
 #define W_HEIGHT (C_HEIGHT)
 
-#define PARTICLE_COUNT_2 4096
+#define PARTICLE_COUNT 2048
+#define PARTICLE_COUNT_2 (PARTICLE_COUNT * 2)
+
+#ifndef INPUT_SIZEOF
+#error Please define INPUT_SIZEOF to the value of the input vertex layout structure
+#endif
+
+#if (PARTICLE_COUNT_2 * INPUT_SIZEOF) > 16384
+#define DECL_BUFF(name) Vec2* name = (Vec2*)malloc(sizeof(Vec2) * PARTICLE_COUNT_2);
+#else
+#define DECL_BUFF(name) Vec2 name[PARTICLE_COUNT_2];
+#endif
+
 #define INIT_VELOCITY_MAX 50
 #define INIT_VELOCITY (NextInteger() % INIT_VELOCITY_MAX) - (INIT_VELOCITY_MAX / 2)
 
@@ -95,18 +109,17 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 	Seed((u8)((u64)time(NULL) * (u32)_getpid()));
 
-	Vec2 buff[PARTICLE_COUNT_2];
+	DECL_BUFF(buff);
 
 	InitParticles(reinterpret_cast<Particle*>(buff));
-	renderer.SetVectorField(buff, ARRAYSIZE(buff));
+	renderer.SetVectorField(buff, PARTICLE_COUNT_2);
 
-	MSG msg_main;
-	MSG msg_canvas;
+	MSG msg;
 
-	while (main.PollMessage(&msg_main))
+	while (main.PollMessage(&msg))
 	{
 		// Switch between canvas messages
-		switch (msg_main.message)
+		switch (msg.message)
 		{
 			// Update()
 			case WM_PAINT:
