@@ -52,35 +52,73 @@ using namespace Microsoft::WRL;
 template<typename TCOMType>
 using com = ComPtr<TCOMType>;
 
+/// <summary>
+/// 1-dimensional float
+/// </summary>
+union float1
+{
+	float x;
+	float r;
+};
 
 /// <summary>
 /// 2-dimensional float
 /// </summary>
-struct float2
+union float2
 {
-	float x;
-	float y;
+	struct
+	{
+		float x;
+		float y;
+	};
+
+	struct
+	{
+		float r;
+		float g;
+	};
 };
 
 /// <summary>
 /// 3-dimensional float
 /// </summary>
-struct float3
+union float3
 {
-	float x;
-	float y;
-	float z;
+	struct
+	{
+		float x;
+		float y;
+		float z;
+	};
+
+	struct
+	{
+		float r;
+		float g;
+		float b;
+	};
 };
 
 /// <summary>
 /// 4-dimensional float
 /// </summary>
-struct float4
+union float4
 {
-	float x;
-	float y;
-	float z;
-	float w;
+	struct
+	{
+		float x;
+		float y;
+		float z;
+		float w;
+	};
+
+	struct
+	{
+		float r;
+		float g;
+		float b;
+		float a;
+	};
 };
 
 

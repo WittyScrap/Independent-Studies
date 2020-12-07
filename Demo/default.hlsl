@@ -50,5 +50,5 @@ vout vert(vin i)
  */
 float4 pixel(vout i) : SV_Target
 {
-	return i.color;
+	return float4(abs(i.color.rgb), 1);
 }

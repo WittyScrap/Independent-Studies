@@ -9,6 +9,11 @@ template<typename TPoint = Vec2>
 class ParticleRenderer
 {
 public:
+    /// <summary>
+    /// Empty default constructor.
+    /// </summary>
+    __forceinline ParticleRenderer() : Target{ NULL } { }
+
 	/// <summary>
 	/// Creates a new rendering context using
 	/// a traget window handle.
@@ -87,7 +92,6 @@ public:
 	/// <param name="newSize">The new size for the swap chain.</param>
 	inline void ResizeSwapChain(const Size<u16> newSize);
 
-
 private:
     /// <summary>
     /// Force-inlined render call.
@@ -139,7 +143,6 @@ private:
     static constexpr UINT                           d3dDriverLen = ARRAYSIZE(d3dDriver);
     static constexpr UINT                           d3dFeatureLen = ARRAYSIZE(d3dFeature);
 };
-
 
 /// <summary>
 /// Creates a new rendering context using

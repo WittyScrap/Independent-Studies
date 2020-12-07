@@ -1,6 +1,8 @@
 #include "DataStructures.h"
 #include "RandTable.h"
 #include <ctime>
+#include <cstdlib>
+
 
 // Random pointer
 static u8 pRand;
@@ -8,16 +10,15 @@ static u8 pRand;
 /// <summary>
 /// Returns a random number.
 /// </summary>
-u16 NextInteger()
+i32 NextInteger()
 {
-	pRand += (u8)time(NULL);
-	return randTable[pRand];
+	return ((i32)rand() >> 15) | ((i32)rand());
 }
 
 /// <summary>
 /// Seeds the random engine.
 /// </summary>
-void Seed(u8 seedValue)
+void Seed(u64 seedValue)
 {
-	pRand = seedValue;
+	srand(seedValue);
 }
