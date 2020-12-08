@@ -11,7 +11,7 @@ Window::Window(HWND parent, u16 width, u16 height, u16 x, u16 y, const wchar_t* 
 
 	u64 mask = (u64)(!parent) - 1ll;
 
-	this->handle = CreateWindowEx(0, _class, title, (~mask & WS_OVERLAPPEDWINDOW) | (mask & WS_CHILD),
+	CreateWindowEx(0, _class, title, (~mask & (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME)) | (mask & WS_CHILD),
 		x, y, width, height, parent, NULL, hInstance, this);
 }
 
@@ -23,7 +23,7 @@ Window::Window(HWND parent, HINSTANCE hInstance, u16 width, u16 height, u16 x, u
 {
 	u64 mask = (u64)(!parent) - 1ll;
 
-	this->handle = CreateWindowEx(0, _class, title, (~mask & WS_OVERLAPPEDWINDOW) | (mask & WS_CHILD) | extraFlags,
+	CreateWindowEx(0, _class, title, (~mask & (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME)) | (mask & WS_CHILD) | extraFlags,
 		x, y, width, height, parent, id, hInstance, this);
 }
 
@@ -47,14 +47,14 @@ void Window::ResizeWindow(u16 width, u16 height)
 
 // Create button
 //
-void Window::DefineButton(BUTTONREF button)
+void Window::RegisterButton(BUTTONREF button, HMENU id, WIN32_EVENT(onClick))
 {
-	HINSTANCE hInstance = GetModuleHandle(NULL);
-
 	CreateWindowEx(0, TEXT("BUTTON"), button.text,
 		WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
 		button.x, button.y, button.w, button.h,
-		this->handle, button.id, hInstance, NULL);
+		this->handle, id, GetModuleHandle(NULL), NULL);
+
+	this->buttons.Add({ id, onClick });
 }
 
 // WinProc callback dispatcher function.
@@ -66,6 +66,7 @@ LRESULT Window::WndProcHandler(WNDPROC_ARGS)
 	if (uMsg == WM_CREATE)
 	{
 		app = (Window*)(((LPCREATESTRUCT)lParam)->lpCreateParams);
+		app->handle = hwnd;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)app);
 	}
 	else
@@ -80,25 +81,26 @@ LRESULT Window::WndProcHandler(WNDPROC_ARGS)
 //
 LRESULT Window::WndProc(WNDPROC_ARGS)
 {
+	LRESULT lr;
+
 	switch (uMsg)
 	{
 	// Creation event
 	case WM_CREATE:
-		this->onCreate(hwnd, uMsg, wParam, lParam);
-		break;
+		return this->onCreate(WNDPROC_ARGS_UNPACK);
 
 	// Paint event
 	case WM_PAINT:
 		this->BeginPaint();
-		this->onPaint(hwnd, uMsg, wParam, lParam);
+		lr = this->onPaint(WNDPROC_ARGS_UNPACK);
 		this->EndPaint();
-		break;
+		return lr;
 
 	// The window is getting resized.
 	case WM_SIZE:
 		this->width = LOWORD(lParam);
 		this->height = HIWORD(lParam);
-		break;
+		return this->onResize(WNDPROC_ARGS_UNPACK);
 		
 	// The window has moved.
 	case WM_MOVING:
@@ -106,13 +108,25 @@ LRESULT Window::WndProc(WNDPROC_ARGS)
 		RECT* pos = (RECT*)lParam;
 		this->x = (u16)pos->left;
 		this->y = (u16)pos->top;
-		break;
+		return this->onMove(WNDPROC_ARGS_UNPACK);
 	}
+
+	// Command received (generally control input).
+	case WM_COMMAND:
+		for (int i = 0; i < this->buttons.GetLength(); i += 1)
+		{
+			if ((HMENU)LOWORD(wParam) == this->buttons[i].menuID)
+			{
+				this->buttons[i].onClick(WNDPROC_ARGS_UNPACK);
+			}
+		}
+		return this->onCommand(WNDPROC_ARGS_UNPACK);
 		
 	// The window's close button was pressed.
 	case WM_CLOSE:
+		lr = this->onClose(WNDPROC_ARGS_UNPACK);
 		DestroyWindow(this->handle);
-		break;
+		return lr;
 		
 	// The window is getting destroyed.
 	case WM_DESTROY:
@@ -120,7 +134,7 @@ LRESULT Window::WndProc(WNDPROC_ARGS)
 		break;
 		
 	default:
-		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+		return DefWindowProc(WNDPROC_ARGS_UNPACK);
 		break;
 	}
 

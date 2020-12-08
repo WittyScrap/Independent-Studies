@@ -1,20 +1,23 @@
 #pragma once
 #include <Windows.h>
+#include "List.h"
 #include "DataStructures.h"
 
 #define WNDPROC_ARGS _In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam
+#define WNDPROC_ARGS_UNPACK hwnd, uMsg, wParam, lParam
 #define GRAB_WINDOW() (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA)
 
 #define GET_HINSTANCE() ((LPCREATESTRUCT)lParam)->hInstance
 #define WIN32_EVENT(x) LRESULT(*x)(WNDPROC_ARGS)
 #define WIN32_DEFAULT_EVENT_HANDLER DefWindowProc
+#define WIN32_EVENT_DECL(x) WIN32_EVENT(x) = WIN32_DEFAULT_EVENT_HANDLER
 
-#define BUTTON(...)								{ __VA_ARGS__ }
-#define REGISTER_BUTTON(hwnd, hinstance, btn)	{																	\
-													CreateWindowEx(0, TEXT("BUTTON"), btn.text,						\
-													WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,				\
-													btn.x, btn.y, btn.w, btn.h, hwnd, btn.id, hinstance, NULL);		\
-												}
+#define RESET_EVENT(w, e) w->e = WIN32_DEFAULT_EVENT_HANDLER
+#define REGISTER_BUTTON(hwnd, hinstance, btn, id)	{																		\
+														CreateWindowEx(0, TEXT("BUTTON"), (btn).text,						\
+														WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,					\
+														(btn).x, (btn).y, (btn).w, (btn).h, (hwnd), (id), hinstance, NULL);	\
+													}
 
 /// <summary>
 /// Defines a button.
@@ -25,10 +28,18 @@ struct BUTTONREF
 	u16 y;
 	u16 w;
 	u16 h;
-	HMENU id;
 	LPCWSTR text;
 };
 
+/// <summary>
+/// Represents a button with associated
+/// behaviour.
+/// </summary>
+struct BUTTON
+{
+	HMENU menuID;
+	WIN32_EVENT(onClick);
+};
 
 /// <summary>
 /// Handles the creation, execution, event 
@@ -95,7 +106,7 @@ public:
 	/// WM_CREATE event is sent.
 	/// </summary>
 	/// <param name="button">Input layout structure for button to be created.</param>
-	void DefineButton(BUTTONREF button);
+	void RegisterButton(BUTTONREF button, HMENU id, WIN32_EVENT(onClick));
 
 	/// <summary>
 	/// The WinAPI handle to this window.
@@ -169,12 +180,32 @@ public:
 	/// <summary>
 	/// OnCreate event (WM_CREATE).
 	/// </summary>
-	WIN32_EVENT(onCreate) = WIN32_DEFAULT_EVENT_HANDLER;
+	WIN32_EVENT_DECL(onCreate);
 
 	/// <summary>
 	/// OnPaint event (WM_PAINT).
 	/// </summary>
-	WIN32_EVENT(onPaint) = WIN32_DEFAULT_EVENT_HANDLER;
+	WIN32_EVENT_DECL(onPaint);
+
+	/// <summary>
+	/// OnResize event (WM_SIZE).
+	/// </summary>
+	WIN32_EVENT_DECL(onResize);
+
+	/// <summary>
+	/// OnClose event (WM_CLOSE).
+	/// </summary>
+	WIN32_EVENT_DECL(onClose);
+
+	/// <summary>
+	/// OnMove event (WM_MOVING).
+	/// </summary>
+	WIN32_EVENT_DECL(onMove);
+
+	/// <summary>
+	/// OnCommand event (WM_COMMAND).
+	/// </summary>
+	WIN32_EVENT_DECL(onCommand);
 
 
 private:
@@ -198,5 +229,7 @@ private:
 
 	HWND handle;
 	PAINTSTRUCT ps;
+
+	List<BUTTON> buttons;
 
 };

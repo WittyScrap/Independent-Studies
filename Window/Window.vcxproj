@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="DataStructures.h" />
+    <ClInclude Include="List.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
