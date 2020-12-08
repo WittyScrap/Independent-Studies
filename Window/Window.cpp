@@ -11,7 +11,7 @@ Window::Window(HWND parent, u16 width, u16 height, u16 x, u16 y, const wchar_t* 
 
 	u64 mask = (u64)(!parent) - 1ll;
 
-	CreateWindowEx(0, _class, title, (~mask & (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME)) | (mask & WS_CHILD),
+	CreateWindowEx(0, _class, title, (~mask & (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX)) | (mask & WS_CHILD),
 		x, y, width, height, parent, NULL, hInstance, this);
 }
 
@@ -23,7 +23,7 @@ Window::Window(HWND parent, HINSTANCE hInstance, u16 width, u16 height, u16 x, u
 {
 	u64 mask = (u64)(!parent) - 1ll;
 
-	CreateWindowEx(0, _class, title, (~mask & (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME)) | (mask & WS_CHILD) | extraFlags,
+	CreateWindowEx(0, _class, title, (~mask & (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX)) | (mask & WS_CHILD) | extraFlags,
 		x, y, width, height, parent, id, hInstance, this);
 }
 
@@ -55,6 +55,16 @@ void Window::RegisterButton(BUTTONREF button, HMENU id, WIN32_EVENT(onClick))
 		this->handle, id, GetModuleHandle(NULL), NULL);
 
 	this->buttons.Add({ id, onClick });
+}
+
+// Create label
+//
+HWND Window::RegisterLabel(LABELREF label, TextAlignment align)
+{
+	return CreateWindowEx(0, TEXT("STATIC"), label.text,
+			WS_VISIBLE | WS_CHILD | (long)align,
+			label.x, label.y, label.w, label.h,
+			this->handle, (HMENU)0, GetModuleHandle(NULL), NULL);
 }
 
 // WinProc callback dispatcher function.
@@ -143,18 +153,15 @@ LRESULT Window::WndProc(WNDPROC_ARGS)
 
 // Registers a new class
 //
-bool __fastcall Window::CreateClass(const wchar_t* className, COLORREF background, WNDPROC wndProc)
+bool __fastcall Window::CreateClass(const wchar_t* className, HBRUSH background, WNDPROC wndProc)
 {
 	const HINSTANCE hInstance = GetModuleHandle(NULL);
-	HBRUSH brush = CreateSolidBrush(background);
 
 	WNDCLASS wndc = { 0 };
 	wndc.lpszClassName = className;
 	wndc.hInstance = hInstance;
 	wndc.lpfnWndProc = wndProc;
-	wndc.hbrBackground = brush;
-	
-	DeleteObject(brush);
+	wndc.hbrBackground = background;
 
 	return RegisterClass(&wndc);
 }

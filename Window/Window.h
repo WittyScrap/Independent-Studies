@@ -11,6 +11,7 @@
 #define WIN32_EVENT(x) LRESULT(*x)(WNDPROC_ARGS)
 #define WIN32_DEFAULT_EVENT_HANDLER DefWindowProc
 #define WIN32_EVENT_DECL(x) WIN32_EVENT(x) = WIN32_DEFAULT_EVENT_HANDLER
+#define WIN32_LAMBDA [](WNDPROC_ARGS) -> LRESULT
 
 #define RESET_EVENT(w, e) w->e = WIN32_DEFAULT_EVENT_HANDLER
 #define REGISTER_BUTTON(hwnd, hinstance, btn, id)	{																		\
@@ -18,6 +19,10 @@
 														WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,					\
 														(btn).x, (btn).y, (btn).w, (btn).h, (hwnd), (id), hinstance, NULL);	\
 													}
+
+#pragma comment(linker, "\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 /// <summary>
 /// Defines a button.
@@ -32,6 +37,19 @@ struct BUTTONREF
 };
 
 /// <summary>
+/// Defines a label.
+/// </summary>
+struct LABELREF
+{
+	u16 x;
+	u16 y;
+	u16 w;
+	u16 h;
+	LPCWSTR text;
+};
+
+
+/// <summary>
 /// Represents a button with associated
 /// behaviour.
 /// </summary>
@@ -39,6 +57,17 @@ struct BUTTON
 {
 	HMENU menuID;
 	WIN32_EVENT(onClick);
+};
+
+/// <summary>
+/// Text alignment for labels and
+/// other static controls.
+/// </summary>
+enum class TextAlignment
+{
+	Left = SS_LEFT,
+	Center = SS_CENTER,
+	Right = SS_RIGHT
 };
 
 /// <summary>
@@ -102,11 +131,15 @@ public:
 
 	/// <summary>
 	/// Defines a new button to be displayed.
-	/// This function must be called before the window's
-	/// WM_CREATE event is sent.
 	/// </summary>
 	/// <param name="button">Input layout structure for button to be created.</param>
 	void RegisterButton(BUTTONREF button, HMENU id, WIN32_EVENT(onClick));
+
+	/// <summary>
+	/// Defines a new label to be displayed.
+	/// </summary>
+	/// <param name="label"></param>
+	HWND RegisterLabel(LABELREF label, TextAlignment align);
 
 	/// <summary>
 	/// The WinAPI handle to this window.
@@ -168,7 +201,7 @@ public:
 	/// <summary>
 	/// Creates a new class definition.
 	/// </summary>
-	static bool __fastcall CreateClass(const wchar_t* className, COLORREF background, WNDPROC wndProc = Window::WndProcHandler);
+	static bool __fastcall CreateClass(const wchar_t* className, HBRUSH background, WNDPROC wndProc = Window::WndProcHandler);
 
 	/// <summary>
 	/// The parent window handle.

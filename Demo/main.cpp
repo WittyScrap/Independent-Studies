@@ -32,7 +32,12 @@
 #endif
 
 #define INIT_VELOCITY_PRECISION 1000
-#define INIT_VELOCITY_RANGE 5
+#define INIT_VELOCITY_RANGE 10
+
+#define C1_START 2.f
+#define C2_START 2.f
+#define W_START 0.9f
+#define W_MIN 0.04f
 
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)
 
@@ -60,6 +65,15 @@ struct Particle
 };
 
 
+// PSO vars
+float C1 = C1_START;
+float C2 = C2_START;
+float W = W_START;
+constexpr float decay = 0.001f;
+
+// Simulation toggle
+bool simulating;
+
 /// <summary>
 /// Updates the set of particles using the loaded ruleset.
 /// </summary>
@@ -71,8 +85,8 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 		particles[i].velocity.x *= (((particles[i].position.x < 0) | (particles[i].position.x > C_WIDTH )) * -1) | 1;
 		particles[i].velocity.y *= (((particles[i].position.y < 0) | (particles[i].position.y > C_HEIGHT)) * -1) | 1;
 
-		particles[i].position.x += particles[i].velocity.x;
-		particles[i].position.y += particles[i].velocity.y;
+		particles[i].position.x += particles[i].velocity.x * W;
+		particles[i].position.y += particles[i].velocity.y * W;
 
 		particles[i].sign.r = (particles[i].velocity.x < 0) && (particles[i].velocity.y < 0);
 
@@ -81,6 +95,11 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 
 		particles[i + 1].velocity = particles[i].velocity;
 		particles[i + 1].sign.r = particles[i].sign.r;
+	}
+
+	if (W > W_MIN)
+	{
+		W -= decay;
 	}
 }
 
@@ -110,31 +129,10 @@ void InitParticles(Particle particles[PARTICLE_COUNT_2])
 
 // The rendering unit
 ParticleRenderer<Vec2>* renderer;
+HWND wDisplay;
 Window* canvas;
 Vec2* buff;
-bool simulating;
 
-
-/// <summary>
-/// Randomize button was clicked.
-/// </summary>
-LRESULT OnRandomize(WNDPROC_ARGS)
-{
-	simulating = false;
-	InitParticles(reinterpret_cast<Particle*>(buff));
-	canvas->Invalidate();
-	return 0;
-}
-
-/// <summary>
-/// Simulate button was clicked.
-/// </summary>
-LRESULT OnSimulate(WNDPROC_ARGS)
-{
-	simulating = true;
-	canvas->Invalidate();
-	return 0;
-}
 
 /// <summary>
 /// Paint event handler.
@@ -147,6 +145,11 @@ LRESULT Update(WNDPROC_ARGS)
 	renderer->RenderAndPresent();
 	UpdateParticles(reinterpret_cast<Particle*>(buff));
 	renderer->UpdateVectorField(buff);
+
+	wchar_t text[10];
+	swprintf(text, 10, L"W: %f", W);
+
+	SetWindowText(wDisplay, text);
 
 	if (simulating)
 	{
@@ -176,8 +179,33 @@ LRESULT Initialize(WNDPROC_ARGS)
 	BUTTONREF btnRnd = { C_WIDTH + 10, C_HEIGHT - 60, 100, 30, TEXT("Randomize") };
 	BUTTONREF btnSml = { C_WIDTH + 120, C_HEIGHT - 60, 100, 30, TEXT("Simulate") };
 
-	app->RegisterButton(btnRnd, (HMENU)1, OnRandomize);
-	app->RegisterButton(btnSml, (HMENU)2, OnSimulate);
+
+	app->RegisterButton(btnRnd, (HMENU)1, WIN32_LAMBDA 
+	{
+		simulating = false;
+		W = W_START;
+		InitParticles(reinterpret_cast<Particle*>(buff));
+		canvas->Invalidate();
+		return 0;
+	});
+
+	app->RegisterButton(btnSml, (HMENU)2, WIN32_LAMBDA 
+	{
+		simulating = true;
+		canvas->Invalidate();
+		return 0;
+	});
+
+	wchar_t text[10];
+
+	swprintf(text, 10, L"C1: %f", C1);
+	app->RegisterLabel({ C_WIDTH + 10, 10, 100, 30, text }, TextAlignment::Left);
+
+	swprintf(text, 10, L"C2: %f", C2);
+	app->RegisterLabel({ C_WIDTH + 10, 40, 100, 30, text }, TextAlignment::Left);
+
+	swprintf(text, 10, L"W: %f", W);
+	wDisplay = app->RegisterLabel({ C_WIDTH + 10, 70, 100, 30, text }, TextAlignment::Left);
 
 	return 0;
 }
@@ -186,8 +214,8 @@ LRESULT Initialize(WNDPROC_ARGS)
 //
 int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
-	Window::CreateClass(L"WindowMainPanel", COLOR_WINDOW);
-	Window::CreateClass(L"WindowDX", RGB(255, 255, 255));
+	Window::CreateClass(L"WindowMainPanel", (HBRUSH)(COLOR_WINDOW));
+	Window::CreateClass(L"WindowDX", (HBRUSH)(COLOR_WINDOW));
 
 	Seed((u8)((u64)time(NULL) * (u32)_getpid()));
 
