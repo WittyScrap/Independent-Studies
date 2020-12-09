@@ -11,7 +11,7 @@
 #define C1_START .1f
 #define C2_START .1f
 #define W_START 1.f
-#define W_MIN 0.4f
+#define W_MIN 0.50001f
 
 #define C_WIDTH 720
 #define C_HEIGHT 720
@@ -39,7 +39,7 @@ struct Particle
 float C1 = C1_START;
 float C2 = C2_START;
 float W = W_START;
-constexpr float decay = 0.001f;
+constexpr float decay = (1 - W_MIN) / ITERATIONS;
 
 // Current global best
 float2 globalBest;
