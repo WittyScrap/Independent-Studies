@@ -10,7 +10,7 @@
 #define GET_HINSTANCE() ((LPCREATESTRUCT)lParam)->hInstance
 #define WIN32_EVENT(x) LRESULT(*x)(WNDPROC_ARGS)
 #define WIN32_DEFAULT_EVENT_HANDLER DefWindowProc
-#define WIN32_EVENT_DECL(x) WIN32_EVENT(x) = WIN32_DEFAULT_EVENT_HANDLER
+#define WIN32_EVENT_AUTO(x) WIN32_EVENT(x) = WIN32_DEFAULT_EVENT_HANDLER
 #define WIN32_LAMBDA [](WNDPROC_ARGS) -> LRESULT
 
 #define RESET_EVENT(w, e) w->e = WIN32_DEFAULT_EVENT_HANDLER
@@ -27,7 +27,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 /// <summary>
 /// Defines a button.
 /// </summary>
-struct BUTTONREF
+struct Button
 {
 	u16 x;
 	u16 y;
@@ -39,13 +39,33 @@ struct BUTTONREF
 /// <summary>
 /// Defines a label.
 /// </summary>
-struct LABELREF
+struct Label
 {
 	u16 x;
 	u16 y;
 	u16 w;
 	u16 h;
 	LPCWSTR text;
+};
+
+/// <summary>
+/// Editable texbox.
+/// </summary>
+struct TextBox
+{
+	enum class Type
+	{
+		Numeric = ES_NUMBER,
+		Any = 0
+	};
+
+	u16 x;
+	u16 y;
+	u16 w;
+	u16 h;
+	LPCWSTR text;
+
+	Type type;
 };
 
 
@@ -57,6 +77,16 @@ struct BUTTON
 {
 	HMENU menuID;
 	WIN32_EVENT(onClick);
+};
+
+/// <summary>
+/// Represents a textbox with associated
+/// behaviour.
+/// </summary>
+struct TEXTBOX
+{
+	HMENU menuID;
+	WIN32_EVENT(onInput);
 };
 
 /// <summary>
@@ -133,13 +163,18 @@ public:
 	/// Defines a new button to be displayed.
 	/// </summary>
 	/// <param name="button">Input layout structure for button to be created.</param>
-	void RegisterButton(BUTTONREF button, HMENU id, WIN32_EVENT(onClick));
+	void RegisterButton(Button button, WIN32_EVENT(onClick));
 
 	/// <summary>
 	/// Defines a new label to be displayed.
 	/// </summary>
 	/// <param name="label"></param>
-	HWND RegisterLabel(LABELREF label, TextAlignment align);
+	HWND RegisterLabel(Label label, TextAlignment align);
+
+	/// <summary>
+	/// Defines a new textbox to be displayed.
+	/// </summary>
+	void RegisterTextBox(TextBox textBox, WIN32_EVENT(onInput));
 
 	/// <summary>
 	/// The WinAPI handle to this window.
@@ -213,32 +248,32 @@ public:
 	/// <summary>
 	/// OnCreate event (WM_CREATE).
 	/// </summary>
-	WIN32_EVENT_DECL(onCreate);
+	WIN32_EVENT_AUTO(onCreate);
 
 	/// <summary>
 	/// OnPaint event (WM_PAINT).
 	/// </summary>
-	WIN32_EVENT_DECL(onPaint);
+	WIN32_EVENT_AUTO(onPaint);
 
 	/// <summary>
 	/// OnResize event (WM_SIZE).
 	/// </summary>
-	WIN32_EVENT_DECL(onResize);
+	WIN32_EVENT_AUTO(onResize);
 
 	/// <summary>
 	/// OnClose event (WM_CLOSE).
 	/// </summary>
-	WIN32_EVENT_DECL(onClose);
+	WIN32_EVENT_AUTO(onClose);
 
 	/// <summary>
 	/// OnMove event (WM_MOVING).
 	/// </summary>
-	WIN32_EVENT_DECL(onMove);
+	WIN32_EVENT_AUTO(onMove);
 
 	/// <summary>
 	/// OnCommand event (WM_COMMAND).
 	/// </summary>
-	WIN32_EVENT_DECL(onCommand);
+	WIN32_EVENT_AUTO(onCommand);
 
 
 private:
@@ -264,5 +299,8 @@ private:
 	PAINTSTRUCT ps;
 
 	List<BUTTON> buttons;
+	List<TEXTBOX> textboxes;
+
+	static HMENU nextId;
 
 };

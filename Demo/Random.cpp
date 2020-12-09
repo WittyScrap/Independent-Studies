@@ -28,5 +28,5 @@ float Range(float min, float max)
 /// </summary>
 void Seed(u64 seedValue)
 {
-	srand(seedValue);
+	srand((unsigned)seedValue);
 }

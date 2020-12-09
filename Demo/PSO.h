@@ -8,15 +8,16 @@
 #define INIT_VELOCITY_PRECISION RAND_MAX
 #define INIT_VELOCITY_RANGE 1
 
-#define C1_START .1f
-#define C2_START .1f
+#define C1_START 0.01f
+#define C2_START 0.01f
 #define W_START 1.f
+
 #define W_MIN 0.50001f
 
 #define C_WIDTH 720
 #define C_HEIGHT 720
 
-#define P_LEN 3
+#define P_LEN 5
 #define ITERATIONS 500
 
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)

@@ -1,6 +1,11 @@
 #include "Window.h"
 #include "Winuser.h"
 
+/// <summary>
+/// Next available HMENU ID
+/// </summary>
+HMENU Window::nextId = (HMENU)1;
+
 // Creates a window using a specific width, height,
 // location, and title.
 //
@@ -47,24 +52,45 @@ void Window::ResizeWindow(u16 width, u16 height)
 
 // Create button
 //
-void Window::RegisterButton(BUTTONREF button, HMENU id, WIN32_EVENT(onClick))
+void Window::RegisterButton(Button button, WIN32_EVENT(onClick))
 {
-	CreateWindowEx(0, TEXT("BUTTON"), button.text,
-		WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
-		button.x, button.y, button.w, button.h,
-		this->handle, id, GetModuleHandle(NULL), NULL);
+	HWND btn = CreateWindowEx(0, TEXT("BUTTON"), button.text,
+					WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+					button.x, button.y, button.w, button.h,
+					this->handle, Window::nextId, GetModuleHandle(NULL), NULL);
 
-	this->buttons.Add({ id, onClick });
+	this->buttons.Add({ Window::nextId, onClick });
+	SendMessage(btn, WM_SETFONT, (LPARAM)GetStockObject(DEFAULT_GUI_FONT), true);
+
+	Window::nextId = (HMENU)((long long)Window::nextId + 1);
 }
 
 // Create label
 //
-HWND Window::RegisterLabel(LABELREF label, TextAlignment align)
+HWND Window::RegisterLabel(Label label, TextAlignment align)
 {
-	return CreateWindowEx(0, TEXT("STATIC"), label.text,
-			WS_VISIBLE | WS_CHILD | (long)align,
-			label.x, label.y, label.w, label.h,
-			this->handle, (HMENU)0, GetModuleHandle(NULL), NULL);
+	HWND hLabel = CreateWindowEx(0, TEXT("STATIC"), label.text,
+					 WS_VISIBLE | WS_CHILD | (long)align,
+					 label.x, label.y, label.w, label.h,
+					 this->handle, (HMENU)0, GetModuleHandle(NULL), NULL);
+
+	SendMessage(hLabel, WM_SETFONT, (LPARAM)GetStockObject(DEFAULT_GUI_FONT), true);
+	return hLabel;
+}
+
+// Create textbox
+//
+void Window::RegisterTextBox(TextBox textBox, WIN32_EVENT(onInput))
+{
+	HWND txt = CreateWindowEx(0, TEXT("EDIT"), textBox.text,
+		WS_TABSTOP | WS_VISIBLE | WS_CHILD | (long)textBox.type | WS_BORDER,
+		textBox.x, textBox.y, textBox.w, textBox.h,
+		this->handle, Window::nextId, GetModuleHandle(NULL), NULL);
+
+	this->textboxes.Add({ Window::nextId, onInput });
+	SendMessage(txt, WM_SETFONT, (LPARAM)GetStockObject(DEFAULT_GUI_FONT), true);
+
+	Window::nextId = (HMENU)((long long)Window::nextId + 1);
 }
 
 // WinProc callback dispatcher function.
@@ -129,6 +155,14 @@ LRESULT Window::WndProc(WNDPROC_ARGS)
 			{
 				this->buttons[i].onClick(WNDPROC_ARGS_UNPACK);
 			}
+		}
+		for (int i = 0; i < this->textboxes.GetLength(); i += 1)
+		{
+			if ((HMENU)LOWORD(wParam) == this->textboxes[i].menuID && HIWORD(wParam) == EN_UPDATE)
+			{
+				this->textboxes[i].onInput((HWND)lParam, EN_UPDATE, wParam, lParam);
+			}
+
 		}
 		return this->onCommand(WNDPROC_ARGS_UNPACK);
 		

@@ -3,6 +3,7 @@
 #include <thread>
 #include "Window.h"
 #include "Random.h"
+#include "Utilities.h"
 #include "PSO.h"
 
 #define INPUT_SIZEOF 24Ull
@@ -21,7 +22,7 @@
 #define DECL_BUFF(name) name = (Vec2*)malloc(sizeof(Vec2) * PARTICLE_COUNT_2);
 #define FREE_BUFF(name) free(name)
 #else
-#define DECL_BUFF(name) name = (Vec2*)alloca(sizeof(Vec2) * PARTICLE_COUNT_2);
+#define DECL_BUFF(name) name = (Vec2*)_malloca(sizeof(Vec2) * PARTICLE_COUNT_2);
 #define FREE_BUFF(name)
 #endif
 
@@ -58,22 +59,23 @@ LRESULT Update(WNDPROC_ARGS)
 
 	renderer->UpdateVectorField(buff);
 	renderer->RenderAndPresent();
-	wchar_t text[20];
 
-	swprintf(text, 10, L"W: %f", W);
-	SetWindowText(wDisplay, text);
+	u64 text;
 
-	swprintf(text, 20, L"Iteration: %d", simulating);
-	SetWindowText(iDisplay, text);
+	swprintf((wchar_t*)&text, 4, L"%f", W);
+	SetWindowText(wDisplay, (wchar_t*)&text);
 
-	swprintf(text, 20, L"G-Best: %f", fnSolutionSpace(globalBest));
-	SetWindowText(bDisplay, text);
+	swprintf((wchar_t*)&text, 4, L"%f", fnSolutionSpace(globalBest));
+	SetWindowText(bDisplay, (wchar_t*)&text);
 
-	swprintf(text, 20, L"At X: %f", globalBest.x);
-	SetWindowText(xDisplay, text);
+	swprintf((wchar_t*)&text, 4, L"%f", globalBest.x);
+	SetWindowText(xDisplay, (wchar_t*)&text);
 
-	swprintf(text, 20, L"At Y: %f", globalBest.y);
-	SetWindowText(yDisplay, text);
+	swprintf((wchar_t*)&text, 4, L"%f", globalBest.y);
+	SetWindowText(yDisplay, (wchar_t*)&text);
+
+	swprintf((wchar_t*)&text, 4, L"%d", simulating);
+	SetWindowText(iDisplay, (wchar_t*)&text);
 
 	if (simulating)
 	{
@@ -101,11 +103,10 @@ LRESULT Initialize(WNDPROC_ARGS)
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
 	renderer->SetVectorField(buff, PARTICLE_COUNT_2);
 
-	BUTTONREF btnRnd = { C_WIDTH + 10, C_HEIGHT - 60, 100, 30, TEXT("Randomize") };
-	BUTTONREF btnSml = { C_WIDTH + 120, C_HEIGHT - 60, 100, 30, TEXT("Simulate") };
+	Button btnRnd = { C_WIDTH + 10, C_HEIGHT - 60, 100, 30, TEXT("Randomize") };
+	Button btnSml = { C_WIDTH + 120, C_HEIGHT - 60, 100, 30, TEXT("Simulate") };
 
-
-	app->RegisterButton(btnRnd, (HMENU)1, WIN32_LAMBDA 
+	app->RegisterButton(btnRnd, WIN32_LAMBDA 
 	{
 		simulating = false;
 		W = W_START;
@@ -115,35 +116,59 @@ LRESULT Initialize(WNDPROC_ARGS)
 		return 0;
 	});
 
-	app->RegisterButton(btnSml, (HMENU)2, WIN32_LAMBDA 
+	app->RegisterButton(btnSml, WIN32_LAMBDA 
 	{
 		simulating = ITERATIONS;
 		canvas->Invalidate();
 		return 0;
 	});
 
-	wchar_t text[20];
+	app->RegisterLabel({ C_WIDTH + 10, 10, 100, 20, TEXT("C1:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 30, 100, 20, TEXT("C2:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 50, 100, 20, TEXT("W:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 80, 100, 20, TEXT("Global Best:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 100, 100, 20, TEXT("At X:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 120, 100, 20, TEXT("At Y:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 200, 100, 20, TEXT("Iteration:") }, TextAlignment::Left);
 
-	swprintf(text, 10, L"C1: %f", C1);
-	app->RegisterLabel({ C_WIDTH + 10, 10, 100, 30, text }, TextAlignment::Left);
+	u64 text;
 
-	swprintf(text, 10, L"C2: %f", C2);
-	app->RegisterLabel({ C_WIDTH + 10, 40, 100, 30, text }, TextAlignment::Left);
+	swprintf((wchar_t*)&text, 4, L"%f", W);
+	wDisplay = app->RegisterLabel({ C_WIDTH + 110, 50, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
 
-	swprintf(text, 10, L"W: %f", W);
-	wDisplay = app->RegisterLabel({ C_WIDTH + 10, 70, 100, 30, text }, TextAlignment::Left);
+	swprintf((wchar_t*)&text, 4, L"%f", fnSolutionSpace(globalBest));
+	bDisplay = app->RegisterLabel({ C_WIDTH + 110, 80, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
 
-	swprintf(text, 20, L"Iteration: %d", simulating);
-	iDisplay = app->RegisterLabel({ C_WIDTH + 10, 110, 100, 30, text }, TextAlignment::Left);
+	swprintf((wchar_t*)&text, 4, L"%f", globalBest.x);
+	xDisplay = app->RegisterLabel({ C_WIDTH + 110, 100, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
 
-	swprintf(text, 20, L"G-Best: %f", fnSolutionSpace(globalBest));
-	bDisplay = app->RegisterLabel({ C_WIDTH + 10, 140, 200, 30, text }, TextAlignment::Left);
+	swprintf((wchar_t*)&text, 4, L"%f", globalBest.y);
+	yDisplay = app->RegisterLabel({ C_WIDTH + 110, 120, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
 
-	swprintf(text, 20, L"At X: %f", globalBest.x);
-	xDisplay = app->RegisterLabel({ C_WIDTH + 10, 170, 200, 30, text }, TextAlignment::Left);
+	swprintf((wchar_t*)&text, 4, L"%d", simulating);
+	iDisplay = app->RegisterLabel({ C_WIDTH + 110, 200, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
 
-	swprintf(text, 20, L"At Y: %f", globalBest.y);
-	yDisplay = app->RegisterLabel({ C_WIDTH + 10, 200, 200, 30, text }, TextAlignment::Left);
+	wchar_t wtext[8];
+
+	swprintf(wtext, 8, L"%1.2f", C1);
+	app->RegisterTextBox({ C_WIDTH + 110, 10, 100, 18, wtext, TextBox::Type::Any }, WIN32_LAMBDA
+	{
+		wchar_t text[10];
+		GetWindowText(hwnd, text, 10);
+		C1 = (float)_wtof(text);
+
+		return 0;
+	});
+
+	swprintf(wtext, 8, L"%1.2f", C2); 
+	app->RegisterTextBox({ C_WIDTH + 110, 30, 100, 18, wtext, TextBox::Type::Any }, WIN32_LAMBDA
+	{
+		wchar_t text[10];
+		GetWindowText(hwnd, text, 10);
+		C2 = (float)_wtof(text);
+
+		return 0;
+	});
 
 	return 0;
 }
