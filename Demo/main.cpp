@@ -2,22 +2,16 @@
 #include <process.h>
 #include <thread>
 #include "Window.h"
-#include "ParticleRenderer.h"
 #include "Random.h"
+#include "PSO.h"
 
 #define INPUT_SIZEOF 24Ull
-
-#define C_WIDTH 1270
-#define C_HEIGHT 720
 
 #define SIDEBAR_W 250
 #define TITLEBAR_H 20	// HACK HACK THIS IS BAD THIS IS REALLY BAD
 
 #define W_WIDTH (C_WIDTH + SIDEBAR_W)
 #define W_HEIGHT (C_HEIGHT)
-
-#define PARTICLE_COUNT 8192
-#define PARTICLE_COUNT_2 (PARTICLE_COUNT * 2)
 
 #ifndef INPUT_SIZEOF
 #error Please define INPUT_SIZEOF to the value of the input vertex layout structure
@@ -31,16 +25,6 @@
 #define FREE_BUFF(name)
 #endif
 
-#define INIT_VELOCITY_PRECISION 1000
-#define INIT_VELOCITY_RANGE 10
-
-#define C1_START 2.f
-#define C2_START 2.f
-#define W_START 0.9f
-#define W_MIN 0.04f
-
-#define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)
-
 #define ABS(x) (x) * (((x) > 0) - ((x) < 0))
 
 /// <summary>
@@ -53,83 +37,13 @@ struct ConstantBuffer
 	float4 color;
 };
 
-/// <summary>
-/// Represents a single particle.
-/// </summary>
-struct Particle
-{
-	float2 position;
-	float2 velocity;
-	float1 sign;
-	float1 __padding0;	// Padding to match size of vec2
-};
-
-
-// PSO vars
-float C1 = C1_START;
-float C2 = C2_START;
-float W = W_START;
-constexpr float decay = 0.001f;
-
-// Simulation toggle
-bool simulating;
-
-/// <summary>
-/// Updates the set of particles using the loaded ruleset.
-/// </summary>
-/// <param name="particles">The particles set.</param>
-void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
-{
-	for (int i = 0; i < PARTICLE_COUNT_2; i += 2)
-	{
-		particles[i].velocity.x *= (((particles[i].position.x < 0) | (particles[i].position.x > C_WIDTH )) * -1) | 1;
-		particles[i].velocity.y *= (((particles[i].position.y < 0) | (particles[i].position.y > C_HEIGHT)) * -1) | 1;
-
-		particles[i].position.x += particles[i].velocity.x * W;
-		particles[i].position.y += particles[i].velocity.y * W;
-
-		particles[i].sign.r = (particles[i].velocity.x < 0) && (particles[i].velocity.y < 0);
-
-		particles[i + 1].position.x = particles[i].position.x + particles[i].velocity.x;
-		particles[i + 1].position.y = particles[i].position.y + particles[i].velocity.y;
-
-		particles[i + 1].velocity = particles[i].velocity;
-		particles[i + 1].sign.r = particles[i].sign.r;
-	}
-
-	if (W > W_MIN)
-	{
-		W -= decay;
-	}
-}
-
-/// <summary>
-/// Initializes the particle set to a random value for each particle.
-/// </summary>
-/// <param name="particles">The particles set.</param>
-void InitParticles(Particle particles[PARTICLE_COUNT_2])
-{
-	for (int i = 0; i < PARTICLE_COUNT_2; i += 2)
-	{
-		particles[i].position.x = (float)RNG_TO(C_WIDTH);
-		particles[i].position.y = (float)RNG_TO(C_HEIGHT);
-
-		particles[i].velocity.x = RNG_VELOCITY;
-		particles[i].velocity.y = RNG_VELOCITY;
-
-		particles[i].sign.r = (particles[i].velocity.x < 0) && (particles[i].velocity.y < 0);
-
-		particles[i + 1].position.x = particles[i].position.x + particles[i].velocity.x;
-		particles[i + 1].position.y = particles[i].position.y + particles[i].velocity.y;
-
-		particles[i + 1].velocity = particles[i].velocity;
-		particles[i + 1].sign.r = particles[i].sign.r;
-	}
-}
-
 // The rendering unit
 ParticleRenderer<Vec2>* renderer;
 HWND wDisplay;
+HWND iDisplay;
+HWND bDisplay;
+HWND xDisplay;
+HWND yDisplay;
 Window* canvas;
 Vec2* buff;
 
@@ -142,17 +56,28 @@ LRESULT Update(WNDPROC_ARGS)
 	// Grab window data
 	Window* app = GRAB_WINDOW();
 
-	renderer->RenderAndPresent();
-	UpdateParticles(reinterpret_cast<Particle*>(buff));
 	renderer->UpdateVectorField(buff);
+	renderer->RenderAndPresent();
+	wchar_t text[20];
 
-	wchar_t text[10];
 	swprintf(text, 10, L"W: %f", W);
-
 	SetWindowText(wDisplay, text);
+
+	swprintf(text, 20, L"Iteration: %d", simulating);
+	SetWindowText(iDisplay, text);
+
+	swprintf(text, 20, L"G-Best: %f", fnSolutionSpace(globalBest));
+	SetWindowText(bDisplay, text);
+
+	swprintf(text, 20, L"At X: %f", globalBest.x);
+	SetWindowText(xDisplay, text);
+
+	swprintf(text, 20, L"At Y: %f", globalBest.y);
+	SetWindowText(yDisplay, text);
 
 	if (simulating)
 	{
+		UpdateParticles(reinterpret_cast<Particle*>(buff));
 		app->Invalidate(false);
 	}
 
@@ -184,6 +109,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 	{
 		simulating = false;
 		W = W_START;
+		globalBest = float2();
 		InitParticles(reinterpret_cast<Particle*>(buff));
 		canvas->Invalidate();
 		return 0;
@@ -191,12 +117,12 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	app->RegisterButton(btnSml, (HMENU)2, WIN32_LAMBDA 
 	{
-		simulating = true;
+		simulating = ITERATIONS;
 		canvas->Invalidate();
 		return 0;
 	});
 
-	wchar_t text[10];
+	wchar_t text[20];
 
 	swprintf(text, 10, L"C1: %f", C1);
 	app->RegisterLabel({ C_WIDTH + 10, 10, 100, 30, text }, TextAlignment::Left);
@@ -206,6 +132,18 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	swprintf(text, 10, L"W: %f", W);
 	wDisplay = app->RegisterLabel({ C_WIDTH + 10, 70, 100, 30, text }, TextAlignment::Left);
+
+	swprintf(text, 20, L"Iteration: %d", simulating);
+	iDisplay = app->RegisterLabel({ C_WIDTH + 10, 110, 100, 30, text }, TextAlignment::Left);
+
+	swprintf(text, 20, L"G-Best: %f", fnSolutionSpace(globalBest));
+	bDisplay = app->RegisterLabel({ C_WIDTH + 10, 140, 200, 30, text }, TextAlignment::Left);
+
+	swprintf(text, 20, L"At X: %f", globalBest.x);
+	xDisplay = app->RegisterLabel({ C_WIDTH + 10, 170, 200, 30, text }, TextAlignment::Left);
+
+	swprintf(text, 20, L"At Y: %f", globalBest.y);
+	yDisplay = app->RegisterLabel({ C_WIDTH + 10, 200, 200, 30, text }, TextAlignment::Left);
 
 	return 0;
 }

@@ -55,70 +55,178 @@ using com = ComPtr<TCOMType>;
 /// <summary>
 /// 1-dimensional float
 /// </summary>
-union float1
+struct float1
 {
-	float x;
-	float r;
+	union
+	{
+		float x;
+		float r;
+	};
+
+	__forceinline float1 operator+(const float1& rhs)
+	{
+		return { x + rhs.x };
+	}
+
+	__forceinline float1 operator-(const float1& rhs)
+	{
+		return { x - rhs.x };
+	}
+
+	__forceinline float1 operator*(const float& rhs)
+	{
+		return { x * rhs };
+	}
 };
 
 /// <summary>
 /// 2-dimensional float
 /// </summary>
-union float2
+struct float2
 {
-	struct
+	union
 	{
-		float x;
-		float y;
+		struct
+		{
+			float x;
+			float y;
+		};
+
+		struct
+		{
+			float r;
+			float g;
+		};
 	};
 
-	struct
+	__forceinline float2 operator+(const float2& rhs)
 	{
-		float r;
-		float g;
-	};
+		return {
+			x + rhs.x,
+			y + rhs.y
+		};
+	}
+
+	__forceinline float2 operator-(const float2& rhs)
+	{
+		return {
+			x - rhs.x,
+			y - rhs.y
+		};
+	}
+
+	__forceinline float2 operator*(const float& rhs)
+	{
+		return {
+			x * rhs,
+			y * rhs
+		};
+	}
 };
 
 /// <summary>
 /// 3-dimensional float
 /// </summary>
-union float3
+struct float3
 {
-	struct
+	union
 	{
-		float x;
-		float y;
-		float z;
+		struct
+		{
+			float x;
+			float y;
+			float z;
+		};
+
+		struct
+		{
+			float r;
+			float g;
+			float b;
+		};
 	};
 
-	struct
+	__forceinline float3 operator+(const float3& rhs)
 	{
-		float r;
-		float g;
-		float b;
-	};
+		return {
+			x + rhs.x,
+			y + rhs.y,
+			z + rhs.z
+		};
+	}
+
+	__forceinline float3 operator-(const float3& rhs)
+	{
+		return {
+			x - rhs.x,
+			y - rhs.y,
+			z - rhs.z
+		};
+	}
+
+	__forceinline float3 operator*(const float& rhs)
+	{
+		return {
+			x * rhs,
+			y * rhs,
+			z * rhs
+		};
+	}
 };
 
 /// <summary>
 /// 4-dimensional float
 /// </summary>
-union float4
+struct float4
 {
-	struct
+	union
 	{
-		float x;
-		float y;
-		float z;
-		float w;
+		struct
+		{
+			float x;
+			float y;
+			float z;
+			float w;
+		};
+
+		struct
+		{
+			float r;
+			float g;
+			float b;
+			float a;
+		};
 	};
 
-	struct
+	__forceinline float4 operator+(const float4& rhs)
 	{
-		float r;
-		float g;
-		float b;
-		float a;
-	};
+		return {
+			x + rhs.x,
+			y + rhs.y,
+			z + rhs.z,
+			w + rhs.w
+		};
+	}
+
+	__forceinline float4 operator-(const float4& rhs)
+	{
+		return {
+			x - rhs.x,
+			y - rhs.y,
+			z - rhs.z,
+			w - rhs.w
+		};
+	}
+
+	__forceinline float4 operator*(const float& rhs)
+	{
+		return {
+			x * rhs,
+			y * rhs,
+			z * rhs,
+			w * rhs
+		};
+	}
 };
 
 
@@ -235,3 +343,69 @@ struct Vec2
 		float4 color;
 	};
 };
+
+/// <summary>
+/// Finds the length of the 2 dimensional
+/// vector.
+/// </summary>
+__forceinline float length(const float2& v)
+{
+	return sqrtf(v.x * v.x + v.y * v.y);
+}
+
+/// <summary>
+/// Finds the length of the 3 dimensional
+/// vector.
+/// </summary>
+__forceinline float length(const float3& v)
+{
+	return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+/// <summary>
+/// Finds the length of the 4 dimensional
+/// vector.
+/// </summary>
+__forceinline float length(const float4& v)
+{
+	return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
+}
+
+/// <summary>
+/// Normalizes a 2D vector.
+/// </summary>
+__forceinline float2 normalize(const float2& v)
+{
+	float len = length(v);
+	return {
+		v.x / len,
+		v.y / len
+	};
+}
+
+/// <summary>
+/// Normalizes a 3D vector.
+/// </summary>
+__forceinline float3 normalize(const float3& v)
+{
+	float len = length(v);
+	return {
+		v.x / len,
+		v.y / len,
+		v.z / len
+	};
+}
+
+/// <summary>
+/// Normalizes a 4D vector.
+/// </summary>
+__forceinline float4 normalize(const float4& v)
+{
+	float len = length(v);
+	return {
+		v.x / len,
+		v.y / len,
+		v.z / len,
+		v.w / len
+	};
+}
