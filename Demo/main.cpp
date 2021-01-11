@@ -118,7 +118,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	app->RegisterButton(btnSml, WIN32_LAMBDA 
 	{
-		simulating = ITERATIONS;
+		simulating = iterations;
 		canvas->Invalidate();
 		return 0;
 	});
@@ -129,7 +129,8 @@ LRESULT Initialize(WNDPROC_ARGS)
 	app->RegisterLabel({ C_WIDTH + 10, 80, 100, 20, TEXT("Global Best:") }, TextAlignment::Left);
 	app->RegisterLabel({ C_WIDTH + 10, 100, 100, 20, TEXT("At X:") }, TextAlignment::Left);
 	app->RegisterLabel({ C_WIDTH + 10, 120, 100, 20, TEXT("At Y:") }, TextAlignment::Left);
-	app->RegisterLabel({ C_WIDTH + 10, 200, 100, 20, TEXT("Iteration:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 200, 100, 20, TEXT("Iterations:") }, TextAlignment::Left);
+	app->RegisterLabel({ C_WIDTH + 10, 220, 100, 20, TEXT("Step:") }, TextAlignment::Left);
 
 	u64 text;
 
@@ -146,9 +147,12 @@ LRESULT Initialize(WNDPROC_ARGS)
 	yDisplay = app->RegisterLabel({ C_WIDTH + 110, 120, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
 
 	swprintf((wchar_t*)&text, 4, L"%d", simulating);
-	iDisplay = app->RegisterLabel({ C_WIDTH + 110, 200, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
+	iDisplay = app->RegisterLabel({ C_WIDTH + 110, 220, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
 
 	wchar_t wtext[8];
+
+	swprintf(wtext, 8, L"/ %d", iterations);
+	app->RegisterLabel({ C_WIDTH + 137, 202, 100, 20, wtext }, TextAlignment::Left);
 
 	swprintf(wtext, 8, L"%1.2f", C1);
 	app->RegisterTextBox({ C_WIDTH + 110, 10, 100, 18, wtext, TextBox::Type::Any }, WIN32_LAMBDA
@@ -166,6 +170,19 @@ LRESULT Initialize(WNDPROC_ARGS)
 		wchar_t text[10];
 		GetWindowText(hwnd, text, 10);
 		C2 = (float)_wtof(text);
+
+		return 0;
+	});
+
+	swprintf(wtext, 8, L"%d", iterations);
+	app->RegisterTextBox({ C_WIDTH + 110, 200, 23, 18, wtext, TextBox::Type::Numeric }, WIN32_LAMBDA
+	{
+		wchar_t text[10];
+		GetWindowText(hwnd, text, 10);
+		iterations = _wtoi(text);
+		/*iterations = iterations * (iterations <= ITERATIONS) + 500 * (iterations > ITERATIONS);
+		_itow_s(iterations, text, 10);
+		SetWindowText(hwnd, text);*/
 
 		return 0;
 	});

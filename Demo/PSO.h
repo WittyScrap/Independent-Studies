@@ -17,7 +17,7 @@
 #define C_WIDTH 720
 #define C_HEIGHT 720
 
-#define P_LEN 5
+#define P_LEN 20
 #define ITERATIONS 500
 
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)
@@ -40,6 +40,7 @@ struct Particle
 float C1 = C1_START;
 float C2 = C2_START;
 float W = W_START;
+int iterations = ITERATIONS;
 constexpr float decay = (1 - W_MIN) / ITERATIONS;
 
 // Current global best
@@ -51,7 +52,7 @@ float2 globalBest;
 /// <param name="x">X-coordinate</param>
 /// <param name="y">Y-coordinate</param>
 /// <returns>The value at the given X/Y coordinate</returns>
-float (*fnSolutionSpace)(const float2& v) = fnTest1;
+float (*fnSolutionSpace)(const float2& v) = fnTest2;
 
 /// <summary>
 /// Calculates the velocity for the next step.
