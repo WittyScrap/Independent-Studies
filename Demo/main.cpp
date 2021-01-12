@@ -6,6 +6,9 @@
 #include "Utilities.h"
 #include "PSO.h"
 
+/** Displays are handles to controls */
+typedef HWND Display;
+
 #define INPUT_SIZEOF 24Ull
 
 #define SIDEBAR_W 250
@@ -26,6 +29,10 @@
 #define FREE_BUFF(name)
 #endif
 
+#define BEGIN_REGISTRATION_SEQUENCE() { u64 text;
+#define REGISTER_LABEL(x, y, w, h, align, format, ...)	
+#define END_REGISTRATION_SEQUENCE() }
+
 #define ABS(x) (x) * (((x) > 0) - ((x) < 0))
 
 /// <summary>
@@ -40,11 +47,11 @@ struct ConstantBuffer
 
 // The rendering unit
 ParticleRenderer<Vec2>* renderer;
-HWND wDisplay;
-HWND iDisplay;
-HWND bDisplay;
-HWND xDisplay;
-HWND yDisplay;
+Display dspWeight;
+Display dspIteration;
+Display dspGlobalBest;
+Display dspBestX;
+Display dspBestY;
 Window* canvas;
 Vec2* buff;
 
@@ -63,19 +70,19 @@ LRESULT Update(WNDPROC_ARGS)
 	u64 text;
 
 	swprintf((wchar_t*)&text, 4, L"%f", W);
-	SetWindowText(wDisplay, (wchar_t*)&text);
+	SetWindowText(dspWeight, (wchar_t*)&text);
 
 	swprintf((wchar_t*)&text, 4, L"%f", fnSolutionSpace(globalBest));
-	SetWindowText(bDisplay, (wchar_t*)&text);
+	SetWindowText(dspGlobalBest, (wchar_t*)&text);
 
 	swprintf((wchar_t*)&text, 4, L"%f", globalBest.x);
-	SetWindowText(xDisplay, (wchar_t*)&text);
+	SetWindowText(dspBestX, (wchar_t*)&text);
 
 	swprintf((wchar_t*)&text, 4, L"%f", globalBest.y);
-	SetWindowText(yDisplay, (wchar_t*)&text);
+	SetWindowText(dspBestY, (wchar_t*)&text);
 
 	swprintf((wchar_t*)&text, 4, L"%d", simulating);
-	SetWindowText(iDisplay, (wchar_t*)&text);
+	SetWindowText(dspIteration, (wchar_t*)&text);
 
 	if (simulating)
 	{
@@ -135,10 +142,10 @@ LRESULT Initialize(WNDPROC_ARGS)
 	u64 text;
 
 	swprintf((wchar_t*)&text, 4, L"%f", W);
-	wDisplay = app->RegisterLabel({ C_WIDTH + 110, 50, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
+	dspWeight = app->RegisterLabel({ C_WIDTH + 110, 50, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
 
 	swprintf((wchar_t*)&text, 4, L"%f", fnSolutionSpace(globalBest));
-	bDisplay = app->RegisterLabel({ C_WIDTH + 110, 80, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
+	dspGlobalBest = app->RegisterLabel({ C_WIDTH + 110, 80, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
 
 	swprintf((wchar_t*)&text, 4, L"%f", globalBest.x);
 	xDisplay = app->RegisterLabel({ C_WIDTH + 110, 100, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
