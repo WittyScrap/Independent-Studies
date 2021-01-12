@@ -30,7 +30,7 @@ typedef HWND Display;
 #endif
 
 #define BEGIN_REGISTRATION_SEQUENCE() { u64 text;
-#define REGISTER_LABEL(x, y, w, h, align, format, ...)	
+#define REGISTER_LABEL(tgt, app, x, y, w, h, align, format, ...)	swprintf((wchar_t*)&text, 4, TEXT(format), __VA_ARGS__); tgt = app->RegisterLabel({ x, y, w, h, (wchar_t*)&text }, align)
 #define END_REGISTRATION_SEQUENCE() }
 
 #define ABS(x) (x) * (((x) > 0) - ((x) < 0))
@@ -139,22 +139,15 @@ LRESULT Initialize(WNDPROC_ARGS)
 	app->RegisterLabel({ C_WIDTH + 10, 200, 100, 20, TEXT("Iterations:") }, TextAlignment::Left);
 	app->RegisterLabel({ C_WIDTH + 10, 220, 100, 20, TEXT("Step:") }, TextAlignment::Left);
 
-	u64 text;
+	BEGIN_REGISTRATION_SEQUENCE();
 
-	swprintf((wchar_t*)&text, 4, L"%f", W);
-	dspWeight = app->RegisterLabel({ C_WIDTH + 110, 50, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
+	REGISTER_LABEL(dspWeight,		app, C_WIDTH + 110, 50, 100, 30, TextAlignment::Left, "%f", W);
+	REGISTER_LABEL(dspGlobalBest,	app, C_WIDTH + 110, 80, 200, 30, TextAlignment::Left, "%f", fnSolutionSpace(globalBest));
+	REGISTER_LABEL(dspBestX,		app, C_WIDTH + 110, 100, 200, 30, TextAlignment::Left, "%f", globalBest.x);
+	REGISTER_LABEL(dspBestY,		app, C_WIDTH + 110, 120, 200, 30, TextAlignment::Left, "%f", globalBest.y);
+	REGISTER_LABEL(dspIteration,	app, C_WIDTH + 110, 220, 100, 30, TextAlignment::Left, "%d", simulating);
 
-	swprintf((wchar_t*)&text, 4, L"%f", fnSolutionSpace(globalBest));
-	dspGlobalBest = app->RegisterLabel({ C_WIDTH + 110, 80, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
-
-	swprintf((wchar_t*)&text, 4, L"%f", globalBest.x);
-	xDisplay = app->RegisterLabel({ C_WIDTH + 110, 100, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
-
-	swprintf((wchar_t*)&text, 4, L"%f", globalBest.y);
-	yDisplay = app->RegisterLabel({ C_WIDTH + 110, 120, 200, 30, (wchar_t*)&text }, TextAlignment::Left);
-
-	swprintf((wchar_t*)&text, 4, L"%d", simulating);
-	iDisplay = app->RegisterLabel({ C_WIDTH + 110, 220, 100, 30, (wchar_t*)&text }, TextAlignment::Left);
+	END_REGISTRATION_SEQUENCE();
 
 	wchar_t wtext[8];
 
