@@ -182,6 +182,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PSO.h" />
+    <ClInclude Include="PSOSelector.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="RandTable.h" />
     <ClInclude Include="SolutionSpaces.h" />

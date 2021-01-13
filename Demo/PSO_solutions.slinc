@@ -11,7 +11,7 @@ float fnTest1(float2 v)
 	x *= 10;
 	y *= 10;
 
-	return (x * x) - 10 * cos(PI * x) + (y * y) - 10 * cos(PI * y);
+	return ((x * x) - 10 * cos(PI * x) + (y * y) - 10 * cos(PI * y)) / 200;
 }
 
 /// <summary>

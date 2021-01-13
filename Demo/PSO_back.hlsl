@@ -1,12 +1,8 @@
 #include "background_vert.slinc"
 #include "PSO_solutions.slinc"
+#include "PSOSelector.h"
 
-#define TEST1(tex) fnTest1(tex) / 200
-#define TEST2(tex) fnTest2(tex)
-#define TEST3(tex) fnTest3(tex)
-
-#define FN(tex) TEST1((tex * 2 - 1))
-
+#define FN(tex) ACTIVE((tex * 2 - 1))
 
 /**
  *  Pixel function/shader. This function must match

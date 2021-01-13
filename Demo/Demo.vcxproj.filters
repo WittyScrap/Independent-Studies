@@ -35,18 +35,15 @@
     <ClInclude Include="SolutionSpaces.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PSOSelector.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PSO.hlsl">
       <Filter>Resource Files</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="PSO_back.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="PSO_solutions.slinc">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
+    <None Include="PSO_back.hlsl" />
+    <None Include="PSO_solutions.slinc" />
   </ItemGroup>
 </Project>
