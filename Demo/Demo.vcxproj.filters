@@ -23,11 +23,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="default.hlsl">
-      <Filter>Resource Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="RandTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -40,5 +35,15 @@
     <ClInclude Include="SolutionSpaces.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PSOSelector.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PSO.hlsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="PSO_back.hlsl" />
+    <None Include="PSO_solutions.slinc" />
   </ItemGroup>
 </Project>

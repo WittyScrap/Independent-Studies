@@ -23,7 +23,10 @@
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)
 #define R Range(0, 2)
 
+#define PROBLEM_COMPARISON <
+
 #include "SolutionSpaces.h"
+#include "PSOSelector.h"
 
 /// <summary>
 /// Represents a single particle.
@@ -47,14 +50,6 @@ constexpr float decay = (1 - W_MIN) / ITERATIONS;
 float2 globalBest;
 
 /// <summary>
-/// Function for the solution space.
-/// </summary>
-/// <param name="x">X-coordinate</param>
-/// <param name="y">Y-coordinate</param>
-/// <returns>The value at the given X/Y coordinate</returns>
-float (*fnSolutionSpace)(const float2& v) = fnTest2;
-
-/// <summary>
 /// Calculates the velocity for the next step.
 /// </summary>
 __forceinline float2 NextVelocity(float2 inVel, float2 inPos, float2 inBest)
@@ -76,16 +71,16 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 		particles[i].velocity = NextVelocity(particles[i].velocity, particles[i].position, particles[i].localBest);
 		particles[i].position = particles[i].position + particles[i].velocity;
 
-		float prevValue = fnSolutionSpace(particles[i].localBest);
-		float currValue = fnSolutionSpace(particles[i].position);
-		float globalValue = fnSolutionSpace(globalBest);
+		float prevValue = ACTIVE(particles[i].localBest);
+		float currValue = ACTIVE(particles[i].position);
+		float globalValue = ACTIVE(globalBest);
 
-		if (currValue < prevValue)
+		if (currValue PROBLEM_COMPARISON prevValue)
 		{
 			particles[i].localBest = particles[i].position;
 		}
 
-		if (currValue < globalValue)
+		if (currValue PROBLEM_COMPARISON globalValue)
 		{
 			globalBest = particles[i].position;
 		}

@@ -72,7 +72,7 @@ LRESULT Update(WNDPROC_ARGS)
 	swprintf((wchar_t*)&text, 4, L"%f", W);
 	SetWindowText(dspWeight, (wchar_t*)&text);
 
-	swprintf((wchar_t*)&text, 4, L"%f", fnSolutionSpace(globalBest));
+	swprintf((wchar_t*)&text, 4, L"%f", ACTIVE(globalBest));
 	SetWindowText(dspGlobalBest, (wchar_t*)&text);
 
 	swprintf((wchar_t*)&text, 4, L"%f", globalBest.x);
@@ -106,7 +106,8 @@ LRESULT Initialize(WNDPROC_ARGS)
 	canvas->onPaint = Update;
 
 	renderer = new ParticleRenderer<Vec2>(canvas->GetHandle(), canvas->GetWindowSize());
-	renderer->LoadShader(L"default.hlsl");
+	renderer->LoadBackgroundShader(L"PSO_back.hlsl");
+	renderer->LoadShader(L"PSO.hlsl");
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
 	renderer->SetVectorField(buff, PARTICLE_COUNT_2);
 
@@ -142,7 +143,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 	BEGIN_REGISTRATION_SEQUENCE();
 
 	REGISTER_LABEL(dspWeight,		app, C_WIDTH + 110, 50, 100, 30, TextAlignment::Left, "%f", W);
-	REGISTER_LABEL(dspGlobalBest,	app, C_WIDTH + 110, 80, 200, 30, TextAlignment::Left, "%f", fnSolutionSpace(globalBest));
+	REGISTER_LABEL(dspGlobalBest,	app, C_WIDTH + 110, 80, 200, 30, TextAlignment::Left, "%f", ACTIVE(globalBest));
 	REGISTER_LABEL(dspBestX,		app, C_WIDTH + 110, 100, 200, 30, TextAlignment::Left, "%f", globalBest.x);
 	REGISTER_LABEL(dspBestY,		app, C_WIDTH + 110, 120, 200, 30, TextAlignment::Left, "%f", globalBest.y);
 	REGISTER_LABEL(dspIteration,	app, C_WIDTH + 110, 220, 100, 30, TextAlignment::Left, "%d", simulating);

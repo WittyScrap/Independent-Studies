@@ -33,6 +33,14 @@ public:
 	/// <param name="fileName">The path in which to find the shader to compile.</param>
 	inline void LoadShader(const wchar_t* fileName);
 
+    /// <summary>
+    /// Loads a shader from a file and compiles it for use
+    /// as a background quad rendering shader. Loading the same
+    /// shader twice causes it to be recompiled.
+    /// </summary>
+    /// <param name="fileName">The path in which to find the shader to compile.</param>
+    inline void LoadBackgroundShader(const wchar_t* fileName);
+
 	/// <summary>
 	/// Deletes any previously generated constant buffers and creates
 	/// a new subresource for it, initializing it to the given data set.
@@ -122,10 +130,14 @@ private:
 	com<ID3D11DeviceContext>						d3dDeviceContext;
 	com<IDXGISwapChain>								dxgiSwapChain;
 	com<ID3D11InputLayout>							d3dInputLayout;
+    com<ID3D11InputLayout>							d3dBackgroundInputLayout;
 	com<ID3D11Buffer>								d3dVertexBuffer;
+    com<ID3D11Buffer>                               d3dBackgroundVertices;
 	com<ID3D11Buffer>								d3dConstantBuffer;
 	com<ID3D11PixelShader>							d3dPixelShader;
 	com<ID3D11VertexShader>							d3dVertexShader;
+    com<ID3D11PixelShader>                          d3dBackgroundPixelShader;
+    com<ID3D11VertexShader>                         d3dBackgroundVertexShader;
 	com<ID3DBlob>									d3dVertexPixelBytecode;
     com<ID3D11RasterizerState>                      d3dRasterizerState;
     com<ID3D11DepthStencilState>                    d3dDepthStencilState;
@@ -135,13 +147,16 @@ private:
     com<ID3D11Texture2D>                            d3dDepthBuffer;
 
     //
-    // Static constant data
+    // Constant data
     //
 
     static constexpr D3D_DRIVER_TYPE                d3dDriver[] = D3D_DRIVERS;
     static constexpr D3D_FEATURE_LEVEL              d3dFeature[] = D3D_FEATURES;
     static constexpr UINT                           d3dDriverLen = ARRAYSIZE(d3dDriver);
     static constexpr UINT                           d3dFeatureLen = ARRAYSIZE(d3dFeature);
+    static constexpr UINT                           backStride = sizeof(Tex2);
+    static constexpr UINT                           stride = sizeof(TPoint);
+    static constexpr UINT                           offset = 0;
 };
 
 /// <summary>
@@ -195,7 +210,7 @@ inline ParticleRenderer<TPoint>::ParticleRenderer(HWND target, const Size<u16> s
 
     D3D11_RASTERIZER_DESC rast;
     SecureZeroMemory(&rast, sizeof(D3D11_RASTERIZER_DESC));
-    rast.FillMode = D3D11_FILL_WIREFRAME;
+    rast.FillMode = D3D11_FILL_SOLID;
     rast.CullMode = D3D11_CULL_NONE;
     rast.DepthClipEnable = TRUE;
     rast.ScissorEnable = TRUE;
@@ -277,8 +292,29 @@ inline ParticleRenderer<TPoint>::ParticleRenderer(HWND target, const Size<u16> s
 
     this->d3dDeviceContext->RSSetScissorRects(1, &scissor);
 
-    // Set topology to line list
-    this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+    // Generate background quad
+    D3D11_BUFFER_DESC vbDesc = { 0 };
+    vbDesc.ByteWidth = (UINT)(sizeof(Tex2) * 5);
+    vbDesc.Usage = D3D11_USAGE_DEFAULT;
+    vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vbDesc.MiscFlags = 0;
+    vbDesc.CPUAccessFlags = 0;
+    vbDesc.StructureByteStride = 0;
+
+    Tex2 vData[5] = {
+        {{ -1,  1 }, { 0, 0 }},
+        {{ -1, -1 }, { 0, 1 }},
+        {{  1, -1 }, { 1, 1 }},
+        {{  1,  1 }, { 1, 0 }},
+        {{ -1,  1 }, { 0, 0 }},
+    };
+
+    D3D11_SUBRESOURCE_DATA vbSubresource;
+    vbSubresource.pSysMem = vData;
+
+    CHECK(
+        SUCCEEDED(this->d3dDevice->CreateBuffer(&vbDesc, &vbSubresource, this->d3dBackgroundVertices.GetAddressOf()))
+    );
 }
 
 // Destructor
@@ -308,6 +344,8 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
 #endif
 
     ID3DBlob* message = NULL;
+
+    this->d3dVertexPixelBytecode->Release();
 
     hr = (D3DCompileFromFile(fileName, nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -343,7 +381,6 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
         this->d3dVertexPixelBytecode->GetBufferSize(), this->d3dInputLayout.GetAddressOf())));
 
     this->d3dVertexPixelBytecode->Release();
-    this->d3dDeviceContext->IASetInputLayout(this->d3dInputLayout.Get());
 
     //////////////////////////////////////////////////////////////////////
 
@@ -366,9 +403,86 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
         this->d3dVertexPixelBytecode->GetBufferSize(), NULL,
         this->d3dPixelShader.GetAddressOf()
     )));
+}
 
-    this->d3dDeviceContext->VSSetShader(this->d3dVertexShader.Get(), NULL, 0);
-    this->d3dDeviceContext->PSSetShader(this->d3dPixelShader.Get(), NULL, 0);
+/// <summary>
+/// Loads a shader from a file and compiles it for use
+/// as a background quad rendering shader. Loading the same
+/// shader twice causes it to be recompiled.
+/// </summary>
+/// <param name="fileName">The path in which to find the shader to compile.</param>
+template<typename TPoint>
+inline void ParticleRenderer<TPoint>::LoadBackgroundShader(const wchar_t* fileName)
+{
+    CHECK(fileName);
+
+    HRESULT hr;
+    DWORD flags =
+
+#ifdef _DEBUG
+        D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+        0;
+#endif
+
+    ID3DBlob* message = NULL;
+
+    hr = (D3DCompileFromFile(fileName, nullptr,
+        D3D_COMPILE_STANDARD_FILE_INCLUDE,
+        "vert", "vs_5_0", flags, 0,
+        this->d3dVertexPixelBytecode.GetAddressOf(),
+        &message));
+
+    if (message != NULL)
+    {
+        MessageBoxA(NULL, "Shader compilation failed, please check Output panel for more information.", "Shader compilation error", MB_OK);
+        OutputDebugStringA((const char*)message->GetBufferPointer());
+    }
+
+    CHECK(SUCCEEDED(hr));
+
+    CHECK(SUCCEEDED(this->d3dDevice->CreateVertexShader(
+        this->d3dVertexPixelBytecode->GetBufferPointer(),
+        this->d3dVertexPixelBytecode->GetBufferSize(), NULL,
+        this->d3dBackgroundVertexShader.GetAddressOf()
+    )));
+
+    // Create input vertex descriptor to describe what the input vertex structure
+    // should look like in the HLSL shader.
+    D3D11_INPUT_ELEMENT_DESC vert[] =
+    {
+        //    Name    | SI |             Format              | IS | Offset |          Input type          | Instance Data    //
+        { "POSITION"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   0    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
+    //  { "COLOR"     , 0  , DXGI_FORMAT_R32G32B32A32_FLOAT  , 0  ,   8    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
+        { "TEXCOORD"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   8    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        }
+    };
+
+    CHECK(SUCCEEDED(this->d3dDevice->CreateInputLayout(vert, ARRAYSIZE(vert), this->d3dVertexPixelBytecode->GetBufferPointer(),
+        this->d3dVertexPixelBytecode->GetBufferSize(), this->d3dBackgroundInputLayout.GetAddressOf())));
+
+    this->d3dVertexPixelBytecode->Release();
+
+    //////////////////////////////////////////////////////////////////////
+
+    hr = (D3DCompileFromFile(fileName, nullptr,
+        D3D_COMPILE_STANDARD_FILE_INCLUDE,
+        "pixel", "ps_5_0", flags, 0,
+        this->d3dVertexPixelBytecode.GetAddressOf(),
+        &message));
+
+    if (message != NULL)
+    {
+        MessageBoxA(NULL, "Shader compilation failed, please check Output panel for more information.", "Shader compilation error", MB_OK);
+        OutputDebugStringA((const char*)message->GetBufferPointer());
+    }
+
+    CHECK(SUCCEEDED(hr));
+
+    CHECK(SUCCEEDED(this->d3dDevice->CreatePixelShader(
+        this->d3dVertexPixelBytecode->GetBufferPointer(),
+        this->d3dVertexPixelBytecode->GetBufferSize(), NULL,
+        this->d3dBackgroundPixelShader.GetAddressOf()
+    )));
 }
 
 /// <summary>
@@ -378,9 +492,6 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
 template<typename TPoint>
 inline void ParticleRenderer<TPoint>::SetVectorField(const TPoint* const vData, const u64 lData)
 {
-    static constexpr UINT stride = sizeof(TPoint);
-    static constexpr UINT offset = 0;
-
     D3D11_BUFFER_DESC vbDesc = { 0 };
     vbDesc.ByteWidth = (UINT)(sizeof(TPoint) * lData);
     vbDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -396,7 +507,6 @@ inline void ParticleRenderer<TPoint>::SetVectorField(const TPoint* const vData, 
         SUCCEEDED(this->d3dDevice->CreateBuffer(&vbDesc, &vbSubresource, this->d3dVertexBuffer.GetAddressOf()))
     );
 
-    this->d3dDeviceContext->IASetVertexBuffers(0, 1, this->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
     this->vertBufferLen = (UINT)lData;
 }
 
@@ -452,6 +562,23 @@ inline void ParticleRenderer<TPoint>::__f_inl_Render() const
 
     this->d3dDeviceContext->ClearRenderTargetView(this->d3dRenderTarget.Get(), clear);
     this->d3dDeviceContext->ClearDepthStencilView(this->d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+
+    // Prepare to draw background quad...
+    this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    this->d3dDeviceContext->IASetVertexBuffers(0, 1, this->d3dBackgroundVertices.GetAddressOf(), &backStride, &offset);
+    this->d3dDeviceContext->IASetInputLayout(this->d3dBackgroundInputLayout.Get());
+    this->d3dDeviceContext->PSSetShader(this->d3dBackgroundPixelShader.Get(), NULL, 0);
+    this->d3dDeviceContext->VSSetShader(this->d3dBackgroundVertexShader.Get(), NULL, 0);
+
+    // Draw background quad
+    this->d3dDeviceContext->Draw(5, 0);
+
+    // Prepare to draw triangle field...
+    this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+    this->d3dDeviceContext->IASetVertexBuffers(0, 1, this->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
+    this->d3dDeviceContext->IASetInputLayout(this->d3dInputLayout.Get());
+    this->d3dDeviceContext->PSSetShader(this->d3dPixelShader.Get(), NULL, 0);
+    this->d3dDeviceContext->VSSetShader(this->d3dVertexShader.Get(), NULL, 0);
 
     // Draw vector field in the back buffer first...
     this->d3dDeviceContext->Draw(this->vertBufferLen, 0);
