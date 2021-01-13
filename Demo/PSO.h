@@ -52,7 +52,7 @@ float2 globalBest;
 /// <param name="x">X-coordinate</param>
 /// <param name="y">Y-coordinate</param>
 /// <returns>The value at the given X/Y coordinate</returns>
-float (*fnSolutionSpace)(const float2& v) = fnTest2;
+float (*fnSolutionSpace)(const float2& v) = fnTest3;
 
 /// <summary>
 /// Calculates the velocity for the next step.

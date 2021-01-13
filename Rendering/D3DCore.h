@@ -46,6 +46,8 @@
 #define D3D_ANTIALIASING_AMOUNT 1
 #define D3D_ANTIALIASING_QUALITY 0
 
+#define CBUFFER __declspec(align(16)) struct
+
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
@@ -341,6 +343,32 @@ struct Vec2
 			float a;
 		};
 		float4 color;
+	};
+};
+
+/// <summary>
+/// Alternate input vertex layout.
+/// </summary>
+struct Tex2
+{
+	union
+	{
+		struct
+		{
+			float x;
+			float y;
+		};
+		float2 pos;
+	};
+
+	union
+	{
+		struct
+		{
+			float u;
+			float v;
+		};
+		float2 uv;
 	};
 };
 

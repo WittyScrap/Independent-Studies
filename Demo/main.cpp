@@ -106,7 +106,8 @@ LRESULT Initialize(WNDPROC_ARGS)
 	canvas->onPaint = Update;
 
 	renderer = new ParticleRenderer<Vec2>(canvas->GetHandle(), canvas->GetWindowSize());
-	renderer->LoadShader(L"default.hlsl");
+	renderer->LoadBackgroundShader(L"PSO_back.hlsl");
+	renderer->LoadShader(L"PSO.hlsl");
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
 	renderer->SetVectorField(buff, PARTICLE_COUNT_2);
 
