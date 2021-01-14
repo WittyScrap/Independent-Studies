@@ -1,12 +1,3 @@
-#ifdef __cplusplus
-#ifndef D3D11_FRAMEWORK_INCLUDED
-struct float2
-{
-	float x, y;
-};
-#endif
-#endif
-
 /// <summary>
 /// Represents a multiple-decision solution
 /// space.

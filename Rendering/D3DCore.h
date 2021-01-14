@@ -233,6 +233,39 @@ struct float4
 	}
 };
 
+/// <summary>
+/// 1-dimensional integer.
+/// </summary>
+struct int1 {
+	INT32 x;
+};
+
+/// <summary>
+/// 2-dimensional integer.
+/// </summary>
+struct int2 {
+	INT32 x;
+	INT32 y;
+};
+
+/// <summary>
+/// 3-dimensional integer.
+/// </summary>
+struct int3 {
+	INT32 x;
+	INT32 y;
+	INT32 z;
+};
+
+/// <summary>
+/// 4-dimensional integer.
+/// </summary>
+struct int4 {
+	INT32 x;
+	INT32 y;
+	INT32 z;
+	INT32 w;
+};
 
 /// <summary>
 /// 3x3 matrix.

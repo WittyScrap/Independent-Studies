@@ -15,6 +15,8 @@ float4 pixel(vout i) : SV_Target
 	const float4 optionA = { m, 1, m, 1 };
 	const float4 optionB = { m, m, 1, 1 };
 
+	i.texcoord.y = 1 - i.texcoord.y;
+
 	float dstToOrigin  = length(i.texcoord - slSpace.origin);
 	float dstToOptionA = length(i.texcoord - slSpace.optionA);
 	float dstToOptionB = length(i.texcoord - slSpace.optionB);
