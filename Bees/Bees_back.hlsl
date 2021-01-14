@@ -28,5 +28,5 @@ float4 pixel(vout i) : SV_Target
 	float inAny = saturate(inOrigin + inOptionA + inOptionB);
 	float4 tint = inOrigin * origin + inOptionA * optionA + inOptionB * optionB;
 
-	return lerp(1, tint, inAny);
+	return lerp(.5f, tint, inAny);
 }

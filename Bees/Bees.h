@@ -2,7 +2,7 @@
 #include "ParticleRenderer.h"
 #include <math.h>
 
-#define PARTICLE_COUNT 1000
+#define PARTICLE_COUNT 100
 #define PARTICLE_COUNT_2 (PARTICLE_COUNT * 2)
 
 #define INIT_VELOCITY_PRECISION RAND_MAX
@@ -57,7 +57,7 @@ __forceinline float2 NextVelocity(float2 inVel, float2 inPos, float2 inBest)
 	optionA = optionA * C_WIDTH;
 	optionB = optionB * C_WIDTH;
 
-	return inVel * W + normalize(optionA - inPos) * C1 * R * inBest.x + normalize(optionB - inPos) * C1 * R * inBest.y;
+	return (inVel * W + normalize(optionA - inPos) * C1 * R * inBest.x + normalize(optionB - inPos) * C1 * R * inBest.y) * saturate(inBest.x + inBest.y);
 }
 
 // Simulation toggle
@@ -73,6 +73,18 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 	{
 		particles[i].velocity = NextVelocity(particles[i].velocity, particles[i].position, particles[i].best);
 		particles[i].position = particles[i].position + particles[i].velocity;
+
+		for (int j = 0; j < PARTICLE_COUNT_2 && C2 > 0; j += 2)
+		{
+			if (i != j)
+			{
+				float dst = length(particles[j].position - particles[i].position);
+				float str = saturate(saturate(1 / dst) * C2);
+
+				particles[i].best.x = lerp(particles[i].best.x, particles[j].best.x, str);
+				particles[i].best.y = lerp(particles[i].best.y, particles[j].best.y, str);
+			}
+		}
 
 		particles[i + 1].position = particles[i].position + normalize(particles[i].velocity) * P_LEN;
 		particles[i + 1].velocity = particles[i].velocity;

@@ -472,3 +472,19 @@ __forceinline float4 normalize(const float4& v)
 		v.w / len
 	};
 }
+
+/// <summary>
+/// Clamps a value between 0..1 
+/// </summary>
+__forceinline float saturate(const float& f)
+{
+	return f * f > 0 * f < 1 + f >= 1;
+}
+
+/// <summary>
+/// Interpolates a value between 0..1 
+/// </summary>
+__forceinline float lerp(const float& a, const float& b, const float& t)
+{
+	return (1 - t) * a + t * b;
+}
