@@ -34,8 +34,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\Demo\background_vert.slinc">
+    <None Include="..\Demo\background_vert.slinc" />
+    <None Include="background_vert.slinc">
       <Filter>Resource Files</Filter>
-    </FxCompile>
+    </None>
   </ItemGroup>
 </Project>

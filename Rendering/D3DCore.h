@@ -12,6 +12,8 @@
 #pragma comment(lib, "D3D11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 
+#define D3D11_FRAMEWORK_INCLUDED
+
 #if _DEBUG
 #define D3D_FLAGS D3D11_CREATE_DEVICE_DEBUG
 #else
@@ -231,6 +233,39 @@ struct float4
 	}
 };
 
+/// <summary>
+/// 1-dimensional integer.
+/// </summary>
+struct int1 {
+	INT32 x;
+};
+
+/// <summary>
+/// 2-dimensional integer.
+/// </summary>
+struct int2 {
+	INT32 x;
+	INT32 y;
+};
+
+/// <summary>
+/// 3-dimensional integer.
+/// </summary>
+struct int3 {
+	INT32 x;
+	INT32 y;
+	INT32 z;
+};
+
+/// <summary>
+/// 4-dimensional integer.
+/// </summary>
+struct int4 {
+	INT32 x;
+	INT32 y;
+	INT32 z;
+	INT32 w;
+};
 
 /// <summary>
 /// 3x3 matrix.
@@ -436,4 +471,20 @@ __forceinline float4 normalize(const float4& v)
 		v.z / len,
 		v.w / len
 	};
+}
+
+/// <summary>
+/// Clamps a value between 0..1 
+/// </summary>
+__forceinline float saturate(const float& f)
+{
+	return f * f > 0 * f < 1 + f >= 1;
+}
+
+/// <summary>
+/// Interpolates a value between 0..1 
+/// </summary>
+__forceinline float lerp(const float& a, const float& b, const float& t)
+{
+	return (1 - t) * a + t * b;
 }
