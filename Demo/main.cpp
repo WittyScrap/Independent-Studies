@@ -81,10 +81,10 @@ LRESULT Update(WNDPROC_ARGS)
 	swprintf((wchar_t*)&text, 4, L"%f", globalBest.y);
 	SetWindowText(dspBestY, (wchar_t*)&text);
 
-	swprintf((wchar_t*)&text, 4, L"%d", simulating);
+	swprintf((wchar_t*)&text, 4, L"%d", step);
 	SetWindowText(dspIteration, (wchar_t*)&text);
 
-	if (simulating)
+	if (step)
 	{
 		UpdateParticles(reinterpret_cast<Particle*>(buff));
 		app->Invalidate(false);
@@ -116,7 +116,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	app->RegisterButton(btnRnd, WIN32_LAMBDA 
 	{
-		simulating = false;
+		step = false;
 		W = W_START;
 		globalBest = float2();
 		InitParticles(reinterpret_cast<Particle*>(buff));
@@ -126,7 +126,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	app->RegisterButton(btnSml, WIN32_LAMBDA 
 	{
-		simulating = iterations;
+		step = iterations;
 		canvas->Invalidate();
 		return 0;
 	});
@@ -146,7 +146,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 	REGISTER_LABEL(dspGlobalBest,	app, C_WIDTH + 110, 80, 200, 30, TextAlignment::Left, "%f", ACTIVE(globalBest));
 	REGISTER_LABEL(dspBestX,		app, C_WIDTH + 110, 100, 200, 30, TextAlignment::Left, "%f", globalBest.x);
 	REGISTER_LABEL(dspBestY,		app, C_WIDTH + 110, 120, 200, 30, TextAlignment::Left, "%f", globalBest.y);
-	REGISTER_LABEL(dspIteration,	app, C_WIDTH + 110, 220, 100, 30, TextAlignment::Left, "%d", simulating);
+	REGISTER_LABEL(dspIteration,	app, C_WIDTH + 110, 220, 100, 30, TextAlignment::Left, "%d", step);
 
 	END_REGISTRATION_SEQUENCE();
 
@@ -203,7 +203,7 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	DECL_BUFF(buff);
 	InitParticles(reinterpret_cast<Particle*>(buff));
 	
-	simulating = 0;
+	step = 0;
 
 	Window main(NULL, GetModuleHandle(NULL), W_WIDTH, W_HEIGHT + TITLEBAR_H, (u16)CW_USEDEFAULT, (u16)CW_USEDEFAULT, (HMENU)0, 0, TEXT("PSO - Demo"), TEXT("WindowMainPanel"), Initialize);
 	main.Show();

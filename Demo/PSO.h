@@ -58,7 +58,7 @@ __forceinline float2 NextVelocity(float2 inVel, float2 inPos, float2 inBest)
 }
 
 // Simulation toggle
-int simulating;
+int step;
 
 /// <summary>
 /// Updates the set of particles using the loaded ruleset.
@@ -95,7 +95,7 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 		W -= decay;
 	}
 
-	simulating -= 1;
+	step -= 1;
 }
 
 /// <summary>

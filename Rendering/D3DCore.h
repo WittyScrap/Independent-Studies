@@ -12,6 +12,8 @@
 #pragma comment(lib, "D3D11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 
+#define D3D11_FRAMEWORK_INCLUDED
+
 #if _DEBUG
 #define D3D_FLAGS D3D11_CREATE_DEVICE_DEBUG
 #else

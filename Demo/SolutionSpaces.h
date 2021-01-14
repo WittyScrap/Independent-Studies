@@ -11,7 +11,7 @@ float fnTest1(const float2& v)
 	x = ((x / C_WIDTH) * 2 - 1) * 10;
 	y = ((y / C_HEIGHT) * 2 - 1) * 10;
 
-	return (x * x) - 10 * cosf(XM_2PI * 2 * x) + (y * y) - 10 * cosf(XM_2PI * 2 * y);
+	return (x * x) - 10 * cosf(XM_2PI * 4 * x) + (y * y) - 10 * cosf(XM_2PI * 4 * y);
 }
 
 /// <summary>

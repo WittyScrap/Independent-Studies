@@ -43,7 +43,11 @@
     <None Include="PSO.hlsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="PSO_back.hlsl" />
-    <None Include="PSO_solutions.slinc" />
+    <None Include="PSO_back.hlsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="PSO_solutions.slinc">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

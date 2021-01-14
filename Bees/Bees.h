@@ -2,7 +2,7 @@
 #include "ParticleRenderer.h"
 #include <math.h>
 
-#define PARTICLE_COUNT 100
+#define PARTICLE_COUNT 1000
 #define PARTICLE_COUNT_2 (PARTICLE_COUNT * 2)
 
 #define INIT_VELOCITY_PRECISION RAND_MAX
@@ -17,7 +17,7 @@
 #define C_WIDTH 720
 #define C_HEIGHT 720
 
-#define P_LEN 20
+#define P_LEN 10
 #define ITERATIONS 500
 
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)
@@ -25,8 +25,7 @@
 
 #define PROBLEM_COMPARISON <
 
-#include "SolutionSpaces.h"
-#include "PSOSelector.h"
+#include "BeesSelector.h"
 
 /// <summary>
 /// Represents a single particle.
@@ -38,7 +37,6 @@ struct Particle
 	float2 localBest;
 };
 
-
 // PSO vars
 float C1 = C1_START;
 float C2 = C2_START;
@@ -46,19 +44,16 @@ float W = W_START;
 int iterations = ITERATIONS;
 constexpr float decay = (1 - W_MIN) / ITERATIONS;
 
-// Current global best
-float2 globalBest;
-
 /// <summary>
 /// Calculates the velocity for the next step.
 /// </summary>
 __forceinline float2 NextVelocity(float2 inVel, float2 inPos, float2 inBest)
 {
-	return inVel * W + (inBest - inPos) * C1 * R + (globalBest - inPos) * C2 * R;
+	return inVel;
 }
 
 // Simulation toggle
-int simulating;
+int step;
 
 /// <summary>
 /// Updates the set of particles using the loaded ruleset.
@@ -71,20 +66,6 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 		particles[i].velocity = NextVelocity(particles[i].velocity, particles[i].position, particles[i].localBest);
 		particles[i].position = particles[i].position + particles[i].velocity;
 
-		float prevValue = ACTIVE(particles[i].localBest);
-		float currValue = ACTIVE(particles[i].position);
-		float globalValue = ACTIVE(globalBest);
-
-		if (currValue PROBLEM_COMPARISON prevValue)
-		{
-			particles[i].localBest = particles[i].position;
-		}
-
-		if (currValue PROBLEM_COMPARISON globalValue)
-		{
-			globalBest = particles[i].position;
-		}
-
 		particles[i + 1].position = particles[i].position + normalize(particles[i].velocity) * P_LEN;
 		particles[i + 1].velocity = particles[i].velocity;
 		particles[i + 1].localBest = particles[i].localBest;
@@ -95,7 +76,7 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 		W -= decay;
 	}
 
-	simulating -= 1;
+	step -= 1;
 }
 
 /// <summary>

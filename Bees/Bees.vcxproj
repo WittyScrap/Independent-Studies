@@ -177,24 +177,18 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="PSO.hlsl">
+    <None Include="Bee.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PSO.h" />
-    <ClInclude Include="PSOSelector.h" />
+    <ClInclude Include="Bees.h" />
+    <ClInclude Include="BeesSelector.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="RandTable.h" />
-    <ClInclude Include="SolutionSpaces.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="PSO_back.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PSO_solutions.slinc">
+    <None Include="Bees_back.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

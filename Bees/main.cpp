@@ -4,12 +4,12 @@
 #include "Window.h"
 #include "Random.h"
 #include "Utilities.h"
-#include "PSO.h"
+#include "Bees.h"
 
 /** Displays are handles to controls */
 typedef HWND Display;
 
-#define INPUT_SIZEOF 24Ull
+#define INPUT_SIZEOF 24ULL
 
 #define SIDEBAR_W 250
 #define TITLEBAR_H 20	// HACK HACK THIS IS BAD THIS IS REALLY BAD
@@ -72,19 +72,10 @@ LRESULT Update(WNDPROC_ARGS)
 	swprintf((wchar_t*)&text, 4, L"%f", W);
 	SetWindowText(dspWeight, (wchar_t*)&text);
 
-	swprintf((wchar_t*)&text, 4, L"%f", ACTIVE(globalBest));
-	SetWindowText(dspGlobalBest, (wchar_t*)&text);
-
-	swprintf((wchar_t*)&text, 4, L"%f", globalBest.x);
-	SetWindowText(dspBestX, (wchar_t*)&text);
-
-	swprintf((wchar_t*)&text, 4, L"%f", globalBest.y);
-	SetWindowText(dspBestY, (wchar_t*)&text);
-
-	swprintf((wchar_t*)&text, 4, L"%d", simulating);
+	swprintf((wchar_t*)&text, 4, L"%d", step);
 	SetWindowText(dspIteration, (wchar_t*)&text);
 
-	if (simulating)
+	if (step)
 	{
 		UpdateParticles(reinterpret_cast<Particle*>(buff));
 		app->Invalidate(false);
@@ -106,8 +97,8 @@ LRESULT Initialize(WNDPROC_ARGS)
 	canvas->onPaint = Update;
 
 	renderer = new ParticleRenderer<Vec2>(canvas->GetHandle(), canvas->GetWindowSize());
-	renderer->LoadBackgroundShader(L"PSO_back.hlsl");
-	renderer->LoadShader(L"PSO.hlsl");
+	renderer->LoadBackgroundShader(L"Bees_back.hlsl");
+	renderer->LoadShader(L"Bee.hlsl");
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
 	renderer->SetVectorField(buff, PARTICLE_COUNT_2);
 
@@ -116,9 +107,8 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	app->RegisterButton(btnRnd, WIN32_LAMBDA 
 	{
-		simulating = false;
+		step = false;
 		W = W_START;
-		globalBest = float2();
 		InitParticles(reinterpret_cast<Particle*>(buff));
 		canvas->Invalidate();
 		return 0;
@@ -126,7 +116,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	app->RegisterButton(btnSml, WIN32_LAMBDA 
 	{
-		simulating = iterations;
+		step = iterations;
 		canvas->Invalidate();
 		return 0;
 	});
@@ -134,19 +124,13 @@ LRESULT Initialize(WNDPROC_ARGS)
 	app->RegisterLabel({ C_WIDTH + 10, 10, 100, 20, TEXT("C1:") }, TextAlignment::Left);
 	app->RegisterLabel({ C_WIDTH + 10, 30, 100, 20, TEXT("C2:") }, TextAlignment::Left);
 	app->RegisterLabel({ C_WIDTH + 10, 50, 100, 20, TEXT("W:") }, TextAlignment::Left);
-	app->RegisterLabel({ C_WIDTH + 10, 80, 100, 20, TEXT("Global Best:") }, TextAlignment::Left);
-	app->RegisterLabel({ C_WIDTH + 10, 100, 100, 20, TEXT("At X:") }, TextAlignment::Left);
-	app->RegisterLabel({ C_WIDTH + 10, 120, 100, 20, TEXT("At Y:") }, TextAlignment::Left);
 	app->RegisterLabel({ C_WIDTH + 10, 200, 100, 20, TEXT("Iterations:") }, TextAlignment::Left);
 	app->RegisterLabel({ C_WIDTH + 10, 220, 100, 20, TEXT("Step:") }, TextAlignment::Left);
 
 	BEGIN_REGISTRATION_SEQUENCE();
 
 	REGISTER_LABEL(dspWeight,		app, C_WIDTH + 110, 50, 100, 30, TextAlignment::Left, "%f", W);
-	REGISTER_LABEL(dspGlobalBest,	app, C_WIDTH + 110, 80, 200, 30, TextAlignment::Left, "%f", ACTIVE(globalBest));
-	REGISTER_LABEL(dspBestX,		app, C_WIDTH + 110, 100, 200, 30, TextAlignment::Left, "%f", globalBest.x);
-	REGISTER_LABEL(dspBestY,		app, C_WIDTH + 110, 120, 200, 30, TextAlignment::Left, "%f", globalBest.y);
-	REGISTER_LABEL(dspIteration,	app, C_WIDTH + 110, 220, 100, 30, TextAlignment::Left, "%d", simulating);
+	REGISTER_LABEL(dspIteration,	app, C_WIDTH + 110, 220, 100, 30, TextAlignment::Left, "%d", step);
 
 	END_REGISTRATION_SEQUENCE();
 
@@ -203,7 +187,7 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	DECL_BUFF(buff);
 	InitParticles(reinterpret_cast<Particle*>(buff));
 	
-	simulating = 0;
+	step = 0;
 
 	Window main(NULL, GetModuleHandle(NULL), W_WIDTH, W_HEIGHT + TITLEBAR_H, (u16)CW_USEDEFAULT, (u16)CW_USEDEFAULT, (HMENU)0, 0, TEXT("PSO - Demo"), TEXT("WindowMainPanel"), Initialize);
 	main.Show();
