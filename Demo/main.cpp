@@ -105,9 +105,22 @@ LRESULT Initialize(WNDPROC_ARGS)
 	canvas->Show();
 	canvas->onPaint = Update;
 
+	InputLayoutSlice<2> inputLayout{};
+
+	inputLayout.layout[0] = {
+		"POSITION",
+		Float2x32,
+		sizeof(float2)
+	};
+	inputLayout.layout[1] = {
+		"COLOR",
+		Float4x32,
+		sizeof(float4)
+	};
+
 	renderer = new ParticleRenderer<Vec2>(canvas->GetHandle(), canvas->GetWindowSize());
 	renderer->LoadBackgroundShader(L"PSO_back.hlsl");
-	renderer->LoadShader(L"PSO.hlsl");
+	renderer->LoadShader(L"PSO.hlsl", inputLayout);
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
 	renderer->SetVectorField(buff, PARTICLE_COUNT_2);
 

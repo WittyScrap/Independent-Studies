@@ -1,6 +1,32 @@
 #pragma once
 #include "D3DCore.h"
 
+enum DXFormat {
+    Float1x32 = DXGI_FORMAT_R32_FLOAT,
+    Float2x32 = DXGI_FORMAT_R32G32_FLOAT,
+    Float3x32 = DXGI_FORMAT_R32G32B32_FLOAT,
+    Float4x32 = DXGI_FORMAT_R32G32B32A32_FLOAT,
+};
+
+// Single input layout frame entry.
+struct InputLayoutEntry
+{
+    const char*     name;
+    DXFormat        format;
+    size_t          size;
+};
+
+template<size_t TSize>
+struct InputLayoutSlice
+{
+    InputLayoutEntry layout[TSize];
+
+    constexpr size_t GetSize()
+    {
+        return TSize;
+    }
+};
+
 /// <summary>
 /// Implements a GPU based renderer through
 /// D3D11.
@@ -31,7 +57,8 @@ public:
 	/// recompiled.
 	/// </summary>
 	/// <param name="fileName">The path in which to find the shader to compile.</param>
-	inline void LoadShader(const wchar_t* fileName);
+    template<int TSize>
+	inline void LoadShader(const wchar_t* fileName, InputLayoutSlice<TSize> inputLayout);
 
     /// <summary>
     /// Loads a shader from a file and compiles it for use
@@ -330,7 +357,8 @@ inline ParticleRenderer<TPoint>::~ParticleRenderer()
 /// </summary>
 /// <param name="fileName">The path in which to find the shader to compile.</param>
 template<typename TPoint>
-inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
+template<int TSize>
+inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName, InputLayoutSlice<TSize> inputLayout)
 {
     CHECK(fileName);
 
@@ -369,13 +397,29 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName)
 
     // Create input vertex descriptor to describe what the input vertex structure
     // should look like in the HLSL shader.
-    D3D11_INPUT_ELEMENT_DESC vert[] =
+    D3D11_INPUT_ELEMENT_DESC vert[inputLayout.GetSize()] = {};
+    int offset = 0;
+
+    for (int i = 0; i < inputLayout.GetSize(); i += 1)
     {
-        //    Name    | SI |             Format              | IS | Offset |          Input type          | Instance Data    //
-        { "POSITION"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   0    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
-        { "COLOR"     , 0  , DXGI_FORMAT_R32G32B32A32_FLOAT  , 0  ,   8    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
-    //  { "TEXCOORD"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   x    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        }
-    };
+        vert[i].SemanticName = inputLayout.layout[i].name;
+        vert[i].SemanticIndex = 0;
+        vert[i].Format = (DXGI_FORMAT)inputLayout.layout[i].format;
+        vert[i].InputSlot = 0;
+        vert[i].AlignedByteOffset = offset;
+        vert[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA; 
+        vert[i].InstanceDataStepRate = 0;
+
+        offset += (int)inputLayout.layout[i].size;
+    }
+
+    //D3D11_INPUT_ELEMENT_DESC vert[] =
+    //{
+    //    //    Name    | SI |             Format              | IS | Offset |          Input type          | Instance Data    //
+    //    { "POSITION"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   0    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
+    //    { "COLOR"     , 0  , DXGI_FORMAT_R32G32B32A32_FLOAT  , 0  ,   8    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        },
+    ////  { "TEXCOORD"  , 0  , DXGI_FORMAT_R32G32_FLOAT        , 0  ,   x    ,  D3D11_INPUT_PER_VERTEX_DATA ,         0        }
+    //};
 
     CHECK(SUCCEEDED(this->d3dDevice->CreateInputLayout(vert, ARRAYSIZE(vert), this->d3dVertexPixelBytecode->GetBufferPointer(),
         this->d3dVertexPixelBytecode->GetBufferSize(), this->d3dInputLayout.GetAddressOf())));

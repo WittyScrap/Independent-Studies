@@ -22,10 +22,10 @@ typedef HWND Display;
 #endif
 
 #if (PARTICLE_COUNT_2 * INPUT_SIZEOF) > 16384
-#define DECL_BUFF(name) name = (Vec2*)malloc(sizeof(Vec2) * PARTICLE_COUNT_2);
+#define DECL_BUFF(name) name = (Vec2*)malloc(sizeof(Vec2) * VECTORS_COUNT);
 #define FREE_BUFF(name) free(name)
 #else
-#define DECL_BUFF(name) name = (Vec2*)_malloca(sizeof(Vec2) * PARTICLE_COUNT_2);
+#define DECL_BUFF(name) name = (Vec2*)_malloca(sizeof(Vec2) * VECTORS_COUNT);
 #define FREE_BUFF(name)
 #endif
 
@@ -96,11 +96,24 @@ LRESULT Initialize(WNDPROC_ARGS)
 	canvas->Show();
 	canvas->onPaint = Update;
 
+	InputLayoutSlice<2> inputLayout{};
+
+	inputLayout.layout[0] = {
+		"POSITION",
+		Float2x32,
+		sizeof(float2)
+	};
+	inputLayout.layout[1] = {
+		"COLOR",
+		Float4x32,
+		sizeof(float4)
+	};
+
 	renderer = new ParticleRenderer<Vec2>(canvas->GetHandle(), canvas->GetWindowSize());
 	renderer->LoadBackgroundShader(L"Bees_back.hlsl");
-	renderer->LoadShader(L"Bees.hlsl");
+	renderer->LoadShader(L"Bees.hlsl", inputLayout);
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
-	renderer->SetVectorField(buff, PARTICLE_COUNT_2);
+	renderer->SetVectorField(buff, VECTORS_COUNT);
 
 	Button btnRnd = { C_WIDTH + 10, C_HEIGHT - 60, 100, 30, TEXT("Randomize") };
 	Button btnSml = { C_WIDTH + 120, C_HEIGHT - 60, 100, 30, TEXT("Simulate") };

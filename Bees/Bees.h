@@ -3,7 +3,7 @@
 #include <math.h>
 
 #define PARTICLE_COUNT 1000
-#define PARTICLE_COUNT_2 (PARTICLE_COUNT * 2)
+#define VECTORS_COUNT (PARTICLE_COUNT * 2)
 
 #define INIT_VELOCITY_PRECISION RAND_MAX
 #define INIT_VELOCITY_RANGE 1
@@ -23,7 +23,7 @@
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)
 #define R Range(0, 2)
 
-#define PROBLEM_COMPARISON <
+#define PROBLEM_COMPARISON <=
 
 #include "SolutionSpaces.h"
 #include "BeesSelector.h"
@@ -52,7 +52,7 @@ constexpr float decay = (1 - W_MIN) / ITERATIONS;
 /// </summary>
 __forceinline float2 NextVelocity(Particle in)
 {
-	return in.velocity * W;
+	return in.velocity * W + (in.localBest - in.position) * C1;
 }
 
 // Simulation toggle
@@ -62,9 +62,9 @@ int step;
 /// Updates the set of particles using the loaded ruleset.
 /// </summary>
 /// <param name="particles">The particles set.</param>
-void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
+void UpdateParticles(Particle particles[VECTORS_COUNT])
 {
-	for (int i = 0; i < PARTICLE_COUNT_2; i += 2)
+	for (int i = 0; i < VECTORS_COUNT; i += 2)
 	{
 		particles[i].velocity = NextVelocity(particles[i]);
 		particles[i].position = particles[i].position + particles[i].velocity;
@@ -75,6 +75,11 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 		if (currValue PROBLEM_COMPARISON prevValue)
 		{
 			particles[i].localBest = particles[i].position;
+		}
+
+		for (int p = 0; p < VECTORS_COUNT; p += 1)
+		{
+
 		}
 
 		particles[i + 1].position = particles[i].position + normalize(particles[i].velocity) * P_LEN;
@@ -94,9 +99,9 @@ void UpdateParticles(Particle particles[PARTICLE_COUNT_2])
 /// Initializes the particle set to a random value for each particle.
 /// </summary>
 /// <param name="particles">The particles set.</param>
-void InitParticles(Particle particles[PARTICLE_COUNT_2])
+void InitParticles(Particle particles[VECTORS_COUNT])
 {
-	for (int i = 0; i < PARTICLE_COUNT_2; i += 2)
+	for (int i = 0; i < VECTORS_COUNT; i += 2)
 	{
 		particles[i].position.x = (float)RNG_TO(C_WIDTH);
 		particles[i].position.y = (float)RNG_TO(C_HEIGHT);
