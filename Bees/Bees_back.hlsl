@@ -1,8 +1,9 @@
 #include "../Rendering/background_vert.slinc"
+#include "Bees_solutions.slinc"
 #include "BeesSelector.h"
 
+#define FN(tex) ACTIVE((tex * 2 - 1))
 #define m 0.5f
-#define r .05f;
 
 /**
  *  Pixel function/shader. This function must match
@@ -11,22 +12,14 @@
  */
 float4 pixel(vout i) : SV_Target
 {
-	const float4 origin  = { 1, m, m, 1 };
-	const float4 optionA = { m, 1, m, 1 };
-	const float4 optionB = { m, m, 1, 1 };
+	const float4 lowEnd  = float4(m, m, 1, 1);
+	const float4 midEnd  = float4(m, 1, m, 1);
+	const float4 highEnd = float4(1, m, m, 1);
 
-	i.texcoord.y = 1 - i.texcoord.y;
+	float fn = saturate(FN(i.texcoord));
 
-	float dstToOrigin  = length(i.texcoord - slSpace.origin);
-	float dstToOptionA = length(i.texcoord - slSpace.optionA);
-	float dstToOptionB = length(i.texcoord - slSpace.optionB);
+	float4 lowLerp = lerp(lowEnd, midEnd, saturate(fn * 2));
+	float4 highLerp = lerp(midEnd, highEnd, saturate(fn / 2 + .5f));
 
-	float inOrigin  = dstToOrigin  < r;
-	float inOptionA = dstToOptionA < r;
-	float inOptionB = dstToOptionB < r;
-
-	float inAny = saturate(inOrigin + inOptionA + inOptionB);
-	float4 tint = inOrigin * origin + inOptionA * optionA + inOptionB * optionB;
-
-	return lerp(.5f, tint, inAny);
+	return lerp(lowLerp, highLerp, fn);
 }

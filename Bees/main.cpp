@@ -9,7 +9,7 @@
 /** Displays are handles to controls */
 typedef HWND Display;
 
-#define INPUT_SIZEOF 24ULL
+#define INPUT_SIZEOF 24Ull
 
 #define SIDEBAR_W 250
 #define TITLEBAR_H 20	// HACK HACK THIS IS BAD THIS IS REALLY BAD
@@ -98,7 +98,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	renderer = new ParticleRenderer<Vec2>(canvas->GetHandle(), canvas->GetWindowSize());
 	renderer->LoadBackgroundShader(L"Bees_back.hlsl");
-	renderer->LoadShader(L"Bee.hlsl");
+	renderer->LoadShader(L"Bees.hlsl");
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
 	renderer->SetVectorField(buff, PARTICLE_COUNT_2);
 
@@ -129,7 +129,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 
 	BEGIN_REGISTRATION_SEQUENCE();
 
-	REGISTER_LABEL(dspWeight,		app, C_WIDTH + 110, 50, 100, 30, TextAlignment::Left, "%f", W);
+	REGISTER_LABEL(dspWeight,		app, C_WIDTH + 110, 50, 100, 30, TextAlignment::Left, "%f", W);\
 	REGISTER_LABEL(dspIteration,	app, C_WIDTH + 110, 220, 100, 30, TextAlignment::Left, "%d", step);
 
 	END_REGISTRATION_SEQUENCE();

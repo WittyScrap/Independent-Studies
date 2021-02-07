@@ -478,7 +478,7 @@ __forceinline float4 normalize(const float4& v)
 /// </summary>
 __forceinline float saturate(const float& f)
 {
-	return f * f > 0 * f < 1 + f >= 1;
+	return f * (f > 0) * (f < 1) + (f >= 1);
 }
 
 /// <summary>

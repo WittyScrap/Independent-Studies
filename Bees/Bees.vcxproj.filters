@@ -15,18 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Random.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="RandTable.h">
+    <ClInclude Include="framework.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RandTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SolutionSpaces.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Bees.h">
@@ -37,10 +35,21 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Bee.hlsl">
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Bees.hlsl">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="Bees_back.hlsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Bees_solutions.slinc">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
