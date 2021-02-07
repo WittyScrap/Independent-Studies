@@ -22,10 +22,10 @@ typedef HWND Display;
 #endif
 
 #if (PARTICLE_COUNT_2 * INPUT_SIZEOF) > 16384
-#define DECL_BUFF(name) name = (Vec2*)malloc(sizeof(Vec2) * VECTORS_COUNT);
+#define DECL_BUFF(name) name = (Bee*)malloc(sizeof(Bee) * VECTORS_COUNT);
 #define FREE_BUFF(name) free(name)
 #else
-#define DECL_BUFF(name) name = (Vec2*)_malloca(sizeof(Vec2) * VECTORS_COUNT);
+#define DECL_BUFF(name) name = (Bee*)_malloca(sizeof(Bee) * VECTORS_COUNT);
 #define FREE_BUFF(name)
 #endif
 
@@ -46,14 +46,14 @@ struct ConstantBuffer
 };
 
 // The rendering unit
-ParticleRenderer<Vec2>* renderer;
+ParticleRenderer<Bee>* renderer;
 Display dspWeight;
 Display dspIteration;
 Display dspGlobalBest;
 Display dspBestX;
 Display dspBestY;
 Window* canvas;
-Vec2* buff;
+Bee* buff;
 
 
 /// <summary>
@@ -77,7 +77,7 @@ LRESULT Update(WNDPROC_ARGS)
 
 	if (step)
 	{
-		UpdateParticles(reinterpret_cast<Particle*>(buff));
+		UpdateParticles(buff);
 		app->Invalidate(false);
 	}
 
@@ -96,20 +96,30 @@ LRESULT Initialize(WNDPROC_ARGS)
 	canvas->Show();
 	canvas->onPaint = Update;
 
-	InputLayoutSlice<2> inputLayout{};
+	InputLayoutSlice<4> inputLayout{};
 
 	inputLayout.layout[0] = {
-		"POSITION",
+		"POSITION", 0,
 		Float2x32,
 		sizeof(float2)
 	};
 	inputLayout.layout[1] = {
-		"COLOR",
+		"COLOR", 0,
 		Float4x32,
 		sizeof(float4)
 	};
+	inputLayout.layout[2] = {
+		"TEXCOORD", 1,
+		Float2x32,
+		sizeof(float2)
+	};
+	inputLayout.layout[3] = {
+		"TEXCOORD", 2,
+		Float1x32,
+		sizeof(float1)
+	};
 
-	renderer = new ParticleRenderer<Vec2>(canvas->GetHandle(), canvas->GetWindowSize());
+	renderer = new ParticleRenderer<Bee>(canvas->GetHandle(), canvas->GetWindowSize());
 	renderer->LoadBackgroundShader(L"Bees_back.hlsl");
 	renderer->LoadShader(L"Bees.hlsl", inputLayout);
 	renderer->CreateConstantBuffer<ConstantBuffer>(cbuff);
@@ -122,7 +132,7 @@ LRESULT Initialize(WNDPROC_ARGS)
 	{
 		step = false;
 		W = W_START;
-		InitParticles(reinterpret_cast<Particle*>(buff));
+		InitParticles(buff);
 		canvas->Invalidate();
 		return 0;
 	});
@@ -198,7 +208,7 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	Seed((u8)((u64)time(NULL) * (u32)_getpid()));
 
 	DECL_BUFF(buff);
-	InitParticles(reinterpret_cast<Particle*>(buff));
+	InitParticles(buff);
 	
 	step = 0;
 

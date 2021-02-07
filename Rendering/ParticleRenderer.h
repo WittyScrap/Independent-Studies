@@ -12,6 +12,7 @@ enum DXFormat {
 struct InputLayoutEntry
 {
     const char*     name;
+    UINT            index;
     DXFormat        format;
     size_t          size;
 };
@@ -403,7 +404,7 @@ inline void ParticleRenderer<TPoint>::LoadShader(const wchar_t* fileName, InputL
     for (int i = 0; i < inputLayout.GetSize(); i += 1)
     {
         vert[i].SemanticName = inputLayout.layout[i].name;
-        vert[i].SemanticIndex = 0;
+        vert[i].SemanticIndex = inputLayout.layout[i].index;
         vert[i].Format = (DXGI_FORMAT)inputLayout.layout[i].format;
         vert[i].InputSlot = 0;
         vert[i].AlignedByteOffset = offset;

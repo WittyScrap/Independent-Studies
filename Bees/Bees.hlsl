@@ -14,7 +14,8 @@ struct vin
 {
 	float2 position : POSITION;
     float4 color    : COLOR;
-//  float2 texcoord : TEXCOORD;
+    float2 texcoord : TEXCOORD1;
+	float1 globalVs : TEXCOORD2;
 };
 
 /**

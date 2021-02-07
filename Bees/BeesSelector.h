@@ -2,4 +2,4 @@
 #define TEST2(tex) fnTest2(tex)
 #define TEST3(tex) fnTest3(tex)
 
-#define ACTIVE(tex) TEST1(tex)
+#define ACTIVE(tex) TEST2(tex)
