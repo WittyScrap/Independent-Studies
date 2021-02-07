@@ -2,7 +2,7 @@
 #include "ParticleRenderer.h"
 #include <math.h>
 
-#define PARTICLE_COUNT 100
+#define PARTICLE_COUNT 1000
 #define PARTICLE_COUNT_2 (PARTICLE_COUNT * 2)
 
 #define INIT_VELOCITY_PRECISION RAND_MAX
@@ -17,7 +17,7 @@
 #define C_WIDTH 720
 #define C_HEIGHT 720
 
-#define P_LEN 20
+#define P_LEN 10
 #define ITERATIONS 500
 
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)

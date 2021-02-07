@@ -25,8 +25,6 @@
 #define RNG_VELOCITY ((((float)RNG_RANGE(-INIT_VELOCITY_PRECISION, INIT_VELOCITY_PRECISION)) / (float)INIT_VELOCITY_PRECISION) * (float)INIT_VELOCITY_RANGE)
 #define R Range(0, 2)
 
-#define PROBLEM_COMPARISON <
-
 /// <summary>
 /// Represents a single particle.
 /// </summary>
