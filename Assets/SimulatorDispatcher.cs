@@ -70,6 +70,12 @@ public class SimulatorDispatcher : MonoBehaviour
     [Tooltip("How many simulation steps should be performed.")]
     public int iterations = 100000;
 
+    /// <summary>
+    /// The distance for communications.
+    /// </summary>
+    [Tooltip("The distance for communications.")]
+    public float CommsDistance = 100.0f;
+
 
 #if UNITY_EDITOR
     private void Start() 
@@ -113,6 +119,7 @@ public class SimulatorDispatcher : MonoBehaviour
         simulator.SetInt("OutputHeight", OutputHeight);
         simulator.SetFloat("C1", c1);
         simulator.SetFloat("C2", c2);
+        simulator.SetFloat("CommsDistance", CommsDistance);
 
         _csSimulate = simulator.FindKernel("CSSimulate");
         _csDissipate = simulator.FindKernel("CSDissipate");
@@ -130,14 +137,14 @@ public class SimulatorDispatcher : MonoBehaviour
             
             if (w.y > w.x)
             {
-                w.y -= _decay;
+                w.y -= _decay; 
             }
 
             _step -= 1;
         }
 
         simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
-        simulator.Dispatch(_csSimulate, ParticlesCount / 1024, 1, 1);
+        simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);
     }
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest) 

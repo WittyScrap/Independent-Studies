@@ -29,6 +29,7 @@ int OutputHeight;
 float W;
 float C1;
 float C2;
+float CommsDistance;
 
 
 /** Functions */
@@ -54,11 +55,12 @@ void iterate(inout float2 velocity, in float2 localBest, in float2 position, in 
 // PSO kernel
 // 
 // Runs the Particle Swarm Optimisation algorithm.
-[numthreads(1024,1,1)]
+[numthreads(32,32,1)]
 void CSSimulate (uint3 id : SV_DispatchThreadID)
 {
     // Gather particle data
     int x = id.x;
+    int y = id.y;
 
     float2 position = Particles[x].position;
     float2 velocity = Particles[x].velocity;
@@ -81,6 +83,12 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     if (currValue CMP bestValue)
     {
         Particles[x].globalBest = position;
+    }
+
+    if (length(Particles[y].position - position) < CommsDistance &&
+        fnSolutionSpace(Particles[y].globalBest) CMP fnSolutionSpace(Particles[x].globalBest))
+    {
+        Particles[x].globalBest = Particles[y].globalBest;
     }
 
     iterate(velocity, Particles[x].localBest, position, Particles[x].globalBest);
