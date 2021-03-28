@@ -1,5 +1,5 @@
 #pragma kernel CSPrepare
-#pragma kernel CSParticles
+#pragma kernel CSSimulate
 
 
 /** Structures */
@@ -27,7 +27,7 @@ int                             OutputHeight;
 /** Functions */
 
 // Solution space function
-float fnSolutionSpace(const float2 v)
+float fnSolutionSpace (const float2 v)
 {
 	float x = v.x;
 	float y = v.y;
@@ -39,7 +39,7 @@ float fnSolutionSpace(const float2 v)
 }
 
 // Pseudo-RNG (source: https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl)
-uint hash(uint x) 
+uint hash (uint x) 
 {
     x += ( x << 10u );
     x ^= ( x >>  6u );
@@ -51,7 +51,7 @@ uint hash(uint x)
 }
 
 // Generate random position from 0,0 to a maximum given value
-int2 randpos(uint x, uint2 to)
+int2 randpos (uint x, uint2 to)
 {
     uint hashX = hash(x) % to.x;
     uint hashY = hash(hashX) % to.y;
@@ -60,7 +60,7 @@ int2 randpos(uint x, uint2 to)
 }
 
 // Generate random velocity from -1,-1 to 1,1
-float2 randvel(uint x)
+float2 randvel (uint x)
 {
     return ((float2)randpos(x, uint2(10000, 10000)) - float2(5000, 5000)) / 5000.f;
 }
@@ -72,24 +72,24 @@ float2 randvel(uint x)
 // 
 // Runs the solution space function through every pixel of the solution
 // space texture to set its initial values.
-[numthreads(1024, 1, 1)]
+[numthreads(1024,1,1)]
 void CSPrepare (uint3 id : SV_DispatchThreadID)
 {
     Particles[id.x].position = randpos(id.x, uint2(OutputWidth, OutputHeight));
-    Particles[id.y].velocity = randvel(id.x);
+    Particles[id.x].velocity = randvel(id.x);
 }
 
 // PSO kernel
 // 
 // Runs the Particle Swarm Optimisation algorithm.
-// The next stage of the algorithm should be carried out through the CSBees kernel.
-[numthreads(4, 4, 64)]
-void CSParticles (uint3 id : SV_DispatchThreadID)
+[numthreads(1024,1,1)]
+void CSSimulate (uint3 id : SV_DispatchThreadID)
 {
-    // Dissipate current pixel
-    ParticleSpace[id.xy] *= .5f;
-
     // Advance current particle
-    Particles[id.z].position += Particles[id.z].velocity;
-    ParticleSpace[Particles[id.z].position] = 1.f;
+    Particles[id.x].position += Particles[id.x].velocity;
+
+    // TODO: Modified PSO simulation
+
+    // Draw particle pixel
+    ParticleSpace[Particles[id.x].position] = 1.f;
 }
