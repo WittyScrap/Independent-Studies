@@ -1,14 +1,95 @@
-#pragma kernel CSMain
+#pragma kernel CSPrepare
+#pragma kernel CSParticles
 
-RWTexture2D<float4> Result;
 
-// Target properties...
-int OutputWidth;
-int OutputHeight;
+/** Structures */
 
-// Main kernel
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+//
+//  Represents a single particle for the Particle Swarm Optimisation
+//  based algorithm.
+//
+struct Particle
 {
-    Result[id.xy] = float4(id.x / (float)OutputWidth, id.y / (float)OutputHeight, 0, 0);
+    int2 position;
+    float2 velocity;
+};
+
+
+/** Data */
+
+RWTexture2D<float>              ParticleSpace;
+RWStructuredBuffer<Particle>    Particles;
+
+int                             OutputWidth;
+int                             OutputHeight;
+
+
+/** Functions */
+
+// Solution space function
+float fnSolutionSpace(const float2 v)
+{
+	float x = v.x;
+	float y = v.y;
+
+	x = ((x / OutputWidth) * 2 - 1) * 3;
+	y = ((y / OutputHeight) * 2 - 1) * 3;
+
+	return cos(x * y) + sin(x * y);
+}
+
+// Pseudo-RNG (source: https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl)
+uint hash(uint x) 
+{
+    x += ( x << 10u );
+    x ^= ( x >>  6u );
+    x += ( x <<  3u );
+    x ^= ( x >> 11u );
+    x += ( x << 15u );
+
+    return x;
+}
+
+// Generate random position from 0,0 to a maximum given value
+int2 randpos(uint x, uint2 to)
+{
+    uint hashX = hash(x) % to.x;
+    uint hashY = hash(hashX) % to.y;
+
+    return int2(hashX, hashY);
+}
+
+// Generate random velocity from -1,-1 to 1,1
+float2 randvel(uint x)
+{
+    return ((float2)randpos(x, uint2(10000, 10000)) - float2(5000, 5000)) / 5000.f;
+}
+
+
+/** Kernels */
+
+// Preparation kernel
+// 
+// Runs the solution space function through every pixel of the solution
+// space texture to set its initial values.
+[numthreads(1024, 1, 1)]
+void CSPrepare (uint3 id : SV_DispatchThreadID)
+{
+    Particles[id.x].position = randpos(id.x, uint2(OutputWidth, OutputHeight));
+    Particles[id.y].velocity = randvel(id.x);
+}
+
+// PSO kernel
+// 
+// Runs the Particle Swarm Optimisation algorithm.
+// The next stage of the algorithm should be carried out through the CSBees kernel.
+[numthreads(4, 4, 64)]
+void CSParticles (uint3 id : SV_DispatchThreadID)
+{
+    // Dissipate current pixel
+    ParticleSpace[id.xy] *= .5f;
+
+    // Advance current particle
+    Particles[id.z].position += Particles[id.z].velocity;
+    ParticleSpace[Particles[id.z].position] = 1.f;
 }

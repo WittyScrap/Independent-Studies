@@ -8,17 +8,45 @@ using UnityEngine;
 /// </summary>
 public class SimulatorDispatcher : MonoBehaviour
 {
+    /// <summary>
+    /// Represents a single particle for the Particle Swarm Optimisation
+    ///  based algorithm.
+    /// </summary>
+    private struct Particle
+    {
+        Vector2Int position;
+
+        Vector2 velocity;
+    }
+
+    /// <summary>
+    /// Represents a single particle for the Bees based algorithm.
+    /// </summary>
+    private struct Bee
+    {
+        Vector2Int position;
+
+        Vector2 velocity;
+    }
+
     public ComputeShader simulator;
 
     private const int OutputWidth = 1024;
 
     private const int OutputHeight = 1024;
 
-    private const int XThreads = 8;
+    private const int ParticlesCount = 16384;
 
-    private const int YThreads = 8;
+    private RenderTexture _particleSpace;
 
-    private RenderTexture _renderTarget;
+    private int _csPrepare;
+
+    private int _csParticles;
+
+    private Particle[] _psoParticles = new Particle[ParticlesCount];
+
+    private Bee[] _beeParticles = new Bee[ParticlesCount];
+
 
 #if UNITY_EDITOR
     private void Start() 
@@ -33,18 +61,45 @@ public class SimulatorDispatcher : MonoBehaviour
 
     private void Awake() 
     {
-        _renderTarget = new RenderTexture(OutputWidth, OutputHeight, 32, DefaultFormat.LDR);
-        _renderTarget.enableRandomWrite = true;
-        _renderTarget.Create();
+        var particlesBuffer = new ComputeBuffer(ParticlesCount, sizeof(int) * 2 + sizeof(float) * 2, 
+                                    ComputeBufferType.Structured);
 
-        simulator.SetTexture(0, Shader.PropertyToID("Result"), _renderTarget, 0);
+        particlesBuffer.SetData(_psoParticles);
+
+        _particleSpace = new RenderTexture(OutputWidth, OutputHeight, 4, DefaultFormat.LDR);
+        _particleSpace.enableRandomWrite = true;
+        _particleSpace.Create();
+
         simulator.SetInt(Shader.PropertyToID("OutputWidth"), OutputWidth);
         simulator.SetInt(Shader.PropertyToID("OutputHeight"), OutputHeight);
+
+        _csParticles = simulator.FindKernel("CSParticles");
+        _csPrepare = simulator.FindKernel("CSPrepare");
+        
+        // Setup resources for all kernels
+        simulator.SetBuffer(_csPrepare, "Particles", particlesBuffer);
+        simulator.SetBuffer(_csParticles, "Particles", particlesBuffer);
+        simulator.SetTexture(_csParticles, "ParticleSpace", _particleSpace, 0);
+
+        ResetValues();
+
+        particlesBuffer.Release();
+    }
+
+    private void ResetValues()
+    {
+        simulator.Dispatch(_csPrepare, ParticlesCount / 1024, 1, 1);
+        
+        simulator.Dispatch(
+            _csParticles, 
+            OutputWidth     / 160,
+            OutputHeight    / 160,
+            ParticlesCount  / 1024
+        );
     }
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest) 
     {
-        simulator.Dispatch(0, OutputWidth / XThreads, OutputHeight / YThreads, 1);
-        Graphics.Blit(_renderTarget, dest);
+        Graphics.Blit(_particleSpace, dest);
     }
 }
