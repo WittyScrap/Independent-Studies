@@ -1,5 +1,5 @@
-#pragma kernel CSPrepare
 #pragma kernel CSSimulate
+#pragma kernel CSDissipate
 
 
 /** Structures */
@@ -10,7 +10,7 @@
 //
 struct Particle
 {
-    int2 position;
+    float2 position;
     float2 velocity;
 };
 
@@ -38,46 +38,8 @@ float fnSolutionSpace (const float2 v)
 	return cos(x * y) + sin(x * y);
 }
 
-// Pseudo-RNG (source: https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl)
-uint hash (uint x) 
-{
-    x += ( x << 10u );
-    x ^= ( x >>  6u );
-    x += ( x <<  3u );
-    x ^= ( x >> 11u );
-    x += ( x << 15u );
-
-    return x;
-}
-
-// Generate random position from 0,0 to a maximum given value
-int2 randpos (uint x, uint2 to)
-{
-    uint hashX = hash(x) % to.x;
-    uint hashY = hash(hashX) % to.y;
-
-    return int2(hashX, hashY);
-}
-
-// Generate random velocity from -1,-1 to 1,1
-float2 randvel (uint x)
-{
-    return ((float2)randpos(x, uint2(10000, 10000)) - float2(5000, 5000)) / 5000.f;
-}
-
 
 /** Kernels */
-
-// Preparation kernel
-// 
-// Runs the solution space function through every pixel of the solution
-// space texture to set its initial values.
-[numthreads(1024,1,1)]
-void CSPrepare (uint3 id : SV_DispatchThreadID)
-{
-    Particles[id.x].position = randpos(id.x, uint2(OutputWidth, OutputHeight));
-    Particles[id.x].velocity = randvel(id.x);
-}
 
 // PSO kernel
 // 
@@ -85,11 +47,39 @@ void CSPrepare (uint3 id : SV_DispatchThreadID)
 [numthreads(1024,1,1)]
 void CSSimulate (uint3 id : SV_DispatchThreadID)
 {
-    // Advance current particle
-    Particles[id.x].position += Particles[id.x].velocity;
-
     // TODO: Modified PSO simulation
+    float2 position = Particles[id.x].position;
+    float2 velocity = Particles[id.x].velocity;
+
+    if (position.x < 0 || position.x > OutputWidth)
+    {
+        velocity.x *= -1;
+    }
+
+    if (position.y < 0 || position.y > OutputHeight)
+    {
+        velocity.y *= -1;
+    }
+
+    
+    // Advance by current velocity
+    position += velocity;
+    
+
+    // Apply particle data
+    Particles[id.x].position = position;
+    Particles[id.x].velocity = velocity;
+
 
     // Draw particle pixel
-    ParticleSpace[Particles[id.x].position] = 1.f;
+    ParticleSpace[position] = 1.f;
+}
+
+// Dissipation kernel
+// 
+// Dissipates the trails created by the particles during the main simulation.
+[numthreads(32,32,1)]
+void CSDissipate(uint3 id : SV_DispatchThreadID)
+{
+    ParticleSpace[id.xy] *= .95f;
 }

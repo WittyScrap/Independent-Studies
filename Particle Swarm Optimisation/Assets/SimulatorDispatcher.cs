@@ -14,38 +14,28 @@ public class SimulatorDispatcher : MonoBehaviour
     /// </summary>
     private struct Particle
     {
-        Vector2Int position;
+        public Vector2 position;
 
-        Vector2 velocity;
-    }
-
-    /// <summary>
-    /// Represents a single particle for the Bees based algorithm.
-    /// </summary>
-    private struct Bee
-    {
-        Vector2Int position;
-
-        Vector2 velocity;
+        public Vector2 velocity;
     }
 
     public ComputeShader simulator;
+
+    private ComputeBuffer _bufferParticles;
 
     private const int OutputWidth = 1024;
 
     private const int OutputHeight = 1024;
 
-    private const int ParticlesCount = 16384;
+    private const int ParticlesCount = 65536;
 
     private RenderTexture _particleSpace;
 
-    private int _csPrepare;
-
     private int _csSimulate;
 
-    private Particle[] _psoParticles = new Particle[ParticlesCount];
+    private int _csDissipate;
 
-    private Bee[] _beeParticles = new Bee[ParticlesCount];
+    private Particle[] _psoParticles = new Particle[ParticlesCount];
 
 
 #if UNITY_EDITOR
@@ -61,6 +51,15 @@ public class SimulatorDispatcher : MonoBehaviour
 
     private unsafe void Awake() 
     {
+        for (int i = 0; i < ParticlesCount; i += 1)
+        {
+            _psoParticles[i].position = new Vector2(Random.Range(0, OutputWidth), Random.Range(0, OutputHeight));
+            _psoParticles[i].velocity = Random.insideUnitCircle;
+        }
+
+        _bufferParticles = new ComputeBuffer(ParticlesCount, sizeof(Particle));
+        _bufferParticles.SetData(_psoParticles);
+
         _particleSpace = new RenderTexture(OutputWidth, OutputHeight, 4, DefaultFormat.LDR);
         _particleSpace.enableRandomWrite = true;
         _particleSpace.Create();
@@ -68,34 +67,27 @@ public class SimulatorDispatcher : MonoBehaviour
         simulator.SetInt("OutputWidth", OutputWidth);
         simulator.SetInt("OutputHeight", OutputHeight);
 
-        _csPrepare = simulator.FindKernel("CSPrepare");
         _csSimulate = simulator.FindKernel("CSSimulate");
+        _csDissipate = simulator.FindKernel("CSDissipate");
 
-        var buff = new ComputeBuffer(ParticlesCount, sizeof(Particle), ComputeBufferType.Structured);
-        buff.SetData(_psoParticles);
-        
-        simulator.SetBuffer(_csPrepare, "Particles", buff);
         simulator.SetTexture(_csSimulate, "ParticleSpace", _particleSpace, 0);
-        simulator.Dispatch(_csPrepare, ParticlesCount / 1024, 1, 1);
-
-        buff.GetData(_psoParticles);
-        buff.Release();
+        simulator.SetTexture(_csDissipate, "ParticleSpace", _particleSpace, 0);
+        simulator.SetBuffer(_csSimulate, "Particles", _bufferParticles);
     }
 
-    private unsafe void Update()
+    private void Update()
     {
-        var buff = new ComputeBuffer(ParticlesCount, sizeof(Particle), ComputeBufferType.Structured);
-        buff.SetData(_psoParticles);
-
-        simulator.SetBuffer(_csSimulate, "Particles", buff);
         simulator.Dispatch(_csSimulate, ParticlesCount / 1024, 1, 1);
-
-        buff.GetData(_psoParticles);
-        buff.Release();
+        simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
     }
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest) 
     {
         Graphics.Blit(_particleSpace, dest);
+    }
+
+    private void OnDestroy() 
+    {
+        _bufferParticles.Release();
     }
 }
