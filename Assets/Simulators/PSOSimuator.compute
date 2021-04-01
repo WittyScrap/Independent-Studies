@@ -15,7 +15,6 @@ struct Particle
     float2 velocity;
     float2 localBest;
     float2 globalBest;
-    float3 color;
 };
 
 /** Data */
@@ -32,7 +31,7 @@ float C2;
 float CommsDistance;
 
 
-/** Functions */
+/** Functions */ 
 
 #include "SolutionSpace.cginc"
 
@@ -46,6 +45,22 @@ float random(in float2 uv)
 void iterate(inout float2 velocity, in float2 localBest, in float2 position, in float2 globalBest)
 {
     velocity = velocity * W + (localBest - position) * C1 * R + (globalBest - position) * C2 * R;
+}
+
+void plot(in float2 where)
+{
+    const float partcileAdd = 0.01f;
+    const int radius = 3;
+
+    ParticleSpace[where] += partcileAdd * 2;
+
+    for (int x = where.x - radius; x < where.x + radius; x += 1)
+    {
+        for (int y = where.y - radius; y < where.y + radius; y += 1)
+        {
+            ParticleSpace[int2(x, y)] += partcileAdd * (1 - (length(float2(x, y) - where) / (float)radius));
+        }
+    }
 }
 
 #undef R
@@ -67,7 +82,7 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 
 
     // Draw particle pixel
-    ParticleSpace[position] = Particles[x].color;
+    plot(position);
 
 
     // Modified PSO simulation

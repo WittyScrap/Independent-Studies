@@ -4,10 +4,15 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine;
 
 /// <summary>
-/// Handles dispatching initialisation data and commands to the simulation compute shader.
+/// Handles dispatching initialisation data and commands to the PSO simulation compute shader.
 /// </summary>
-public class SimulatorDispatcher : MonoBehaviour
+public class PSOSimulatorDispatcher : MonoBehaviour
 {
+    /// <summary>
+    /// Simulation event delegate wrapper.
+    /// </summary>
+    public delegate void SimulationEvent(RenderTexture output);
+
     private struct Particle
     {
         public Vector2 position;
@@ -17,19 +22,17 @@ public class SimulatorDispatcher : MonoBehaviour
         public Vector2 localBest;
 
         public Vector2 globalBest;
-
-        public Vector3 color;
     }
 
     private const int OutputWidth = 512;
 
     private const int OutputHeight = 512;
 
-    private const int ParticlesCount = 2048;
+    private const int ParticlesCount = 512;
 
     private ComputeBuffer _bufferParticles;
 
-    private RenderTexture _particleSpace;
+    public RenderTexture _particleSpace;
 
     private int _csSimulate;
 
@@ -41,10 +44,19 @@ public class SimulatorDispatcher : MonoBehaviour
     
     private int _step;
 
+    private bool _completed = false;
+
+    private Material _background;
+
     /// <summary>
     /// The compute shader containing the current desired simulator.
     /// </summary>
     public ComputeShader simulator;
+
+    /// <summary>
+    /// Used to render the 2D solution space plot to the background.
+    /// </summary>
+    public Shader backgroundRenderer;
 
     /// <summary>
     /// The starting and minimum inertial coefficient.
@@ -68,13 +80,19 @@ public class SimulatorDispatcher : MonoBehaviour
     /// How many simulation steps should be performed.
     /// </summary>
     [Tooltip("How many simulation steps should be performed.")]
-    public int iterations = 100000;
+    public int iterations = 1000;
 
     /// <summary>
     /// The distance for communications.
     /// </summary>
     [Tooltip("The distance for communications.")]
-    public float CommsDistance = 100.0f;
+    public float commsDistance = 15.0f;
+
+    /// <summary>
+    /// Completed simulation event handler.
+    /// Event will only trigger once, when the iterations counter has reached its limit.
+    /// </summary>
+    public event SimulationEvent simulationComplete;
 
 
 #if UNITY_EDITOR
@@ -96,6 +114,8 @@ public class SimulatorDispatcher : MonoBehaviour
 
     private unsafe void Awake() 
     {
+        _background = new Material(backgroundRenderer);
+
         _decay = (1.0f - w.x) / iterations;
         _step = iterations;
 
@@ -105,7 +125,6 @@ public class SimulatorDispatcher : MonoBehaviour
             _psoParticles[i].velocity = Random.insideUnitCircle;
             _psoParticles[i].localBest = _psoParticles[i].position;
             _psoParticles[i].globalBest = _psoParticles[i].position;
-            _psoParticles[i].color = RandomRGB();
         }
 
         _bufferParticles = new ComputeBuffer(ParticlesCount, sizeof(Particle));
@@ -119,7 +138,7 @@ public class SimulatorDispatcher : MonoBehaviour
         simulator.SetInt("OutputHeight", OutputHeight);
         simulator.SetFloat("C1", c1);
         simulator.SetFloat("C2", c2);
-        simulator.SetFloat("CommsDistance", CommsDistance);
+        simulator.SetFloat("CommsDistance", commsDistance);
 
         _csSimulate = simulator.FindKernel("CSSimulate");
         _csDissipate = simulator.FindKernel("CSDissipate");
@@ -141,15 +160,20 @@ public class SimulatorDispatcher : MonoBehaviour
             }
 
             _step -= 1;
-        }
 
-        simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
-        simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);
+            simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
+            simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);
+        }
+        else if (!_completed)
+        {
+            simulationComplete.Invoke(_particleSpace);
+            _completed = true;
+        }
     }
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest) 
     {
-        Graphics.Blit(_particleSpace, dest);
+        Graphics.Blit(_particleSpace, dest, _background);
     }
 
     private void OnDestroy() 
