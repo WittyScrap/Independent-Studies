@@ -54,11 +54,6 @@ public class PSOSimulatorDispatcher : MonoBehaviour
     public ComputeShader simulator;
 
     /// <summary>
-    /// Used to render the 2D solution space plot to the background.
-    /// </summary>
-    public Shader backgroundRenderer;
-
-    /// <summary>
     /// The starting and minimum inertial coefficient.
     /// </summary>
     [Tooltip("The starting and minimum inertial coefficient."), MinMaxSlider(0, 2)]
@@ -106,15 +101,9 @@ public class PSOSimulatorDispatcher : MonoBehaviour
     }
 #endif
 
-    private Vector3 RandomRGB()
+    private unsafe void Awake()
     {
-        Color color = Random.ColorHSV(0, 1, 0, 1, .5f, 1);
-        return new Vector3(color.r, color.g, color.b);
-    }
-
-    private unsafe void Awake() 
-    {
-        _background = new Material(backgroundRenderer);
+        _background = new Material(Shader.Find("Hidden/PSOBackground"));
 
         _decay = (1.0f - w.x) / iterations;
         _step = iterations;

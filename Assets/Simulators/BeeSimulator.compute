@@ -1,7 +1,6 @@
 #pragma kernel CSSimulate
 #pragma kernel CSDissipate
 
-#define CMP <
 
 /** Structures */
 
@@ -13,19 +12,17 @@ struct Particle
 {
     float2 position;
     float2 velocity;
-    float2 localBest;
-    float2 globalBest;
 };
 
 /** Data */
 
 RWTexture2D<float3>             ParticleSpace;
 RWStructuredBuffer<Particle>    Particles;
+StructuredBuffer<float2>        Options;
 
 int OutputWidth;
 int OutputHeight;
 
-float W;
 float C1;
 float C2;
 float CommsDistance;
@@ -33,7 +30,6 @@ float CommsDistance;
 
 /** Functions */ 
 
-#include "SolutionSpace.cginc"
 
 float random(in float2 uv)
 {
@@ -124,5 +120,16 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 [numthreads(32,32,1)]
 void CSDissipate(uint3 id : SV_DispatchThreadID)
 {
+    float3 sum = 0;
+    int2 uv = (int2)id;
+
+    for (int x = max((uv.x - 1), 0); x < uv.x + 2; x += 1)
+    {
+        for (int y = max((uv.y - 1), 0); y < uv.y + 2; y += 1)
+        {
+            sum += ParticleSpace[int2(x, y)];
+        }
+    }
+
     ParticleSpace[id.xy] = 0;
 }

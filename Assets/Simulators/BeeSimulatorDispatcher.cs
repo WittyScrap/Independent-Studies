@@ -23,9 +23,11 @@ namespace Assets.Simulators
 #endif
         private RenderTexture _output;
 
-        private readonly Vector2Int[] _options = new Vector2Int[MaxOptions];
+        private readonly Vector4[] _options = new Vector4[MaxOptions];
 
         private int _optionsCount = 0;
+
+        private Material _background;
 
         /// <summary>
         /// A reference to the previous iteration of the simulation system.
@@ -76,17 +78,20 @@ namespace Assets.Simulators
 
             for (int i = 0; i < foundEntries; i += 1)
             {
-                _options[i] = new Vector2Int(
-                    Mathf.RoundToInt(detectedOptions[i].x),
-                    Mathf.RoundToInt(detectedOptions[i].y)
+                _options[i] = new Vector4(
+                    detectedOptions[i].x,
+                    detectedOptions[i].y
                 );
             }
 
             _optionsCount = foundEntries;
 
 #if DEBUG
-            Debug.Log($"Found a total of {_optionsCount} options, proceeding to algorithm 2...");
+            Debug.Log($"Found a total of {_optionsCount} options out of a maximum of {MaxOptions}, refining output...");
 #endif
+
+            _background.SetVectorArray("_Options", _options);
+            _background.SetInt("_TotalOptions", _optionsCount);
         }
 
         IEnumerator InitializationCoroutine(RenderTexture output)
@@ -104,7 +109,7 @@ namespace Assets.Simulators
 
             yield return new WaitForEndOfFrame();
 
-            _output = tmp;
+            Destroy(tmp);
         }
 
         void Initialize(RenderTexture output)
@@ -114,6 +119,7 @@ namespace Assets.Simulators
 
         void Awake()
         {
+            _background = new Material(Shader.Find("Hidden/BeesBackground"));
             psoSimulator.simulationComplete += Initialize;
             enabled = false;
         }
@@ -128,7 +134,7 @@ namespace Assets.Simulators
 
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
-            Graphics.Blit(_output, destination);
+            Graphics.Blit(_output, destination, _background);
         }
 
         private void OnDestroy()

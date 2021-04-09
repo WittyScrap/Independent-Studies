@@ -1,4 +1,4 @@
-Shader "Hidden/Background"
+Shader "Hidden/BeesBackground"
 {
     Properties
     {
@@ -15,9 +15,13 @@ Shader "Hidden/Background"
             #pragma vertex vert
             #pragma fragment frag
 
-
             #include "UnityCG.cginc"
-            #define m 0.5f
+            #define PointRadius .05f
+            #define BaseColor float4(1, 1, 1, 1)
+            #define CircleColor float4(1, 0.75f, 0.75f, 1)
+
+            float4 _Options[5];
+            int _TotalOptions;
 
             struct appdata
             {
@@ -43,19 +47,14 @@ Shader "Hidden/Background"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                const float4 lowEnd = float4(m, m, 1, 1);
-                const float4 midEnd = float4(m, 1, m, 1);
-                const float4 highEnd = float4(1, m, m, 1);
+                int inCircle = 0;
 
-                float x = (i.uv.x * 2 - 1) * 3;
-                float y = (i.uv.y * 2 - 1) * 3;
+                for (int x = 0; x < _TotalOptions; x += 1)
+                {
+                    inCircle |= length(i.uv - _Options[x].xy) < PointRadius;
+                }
 
-                float fn = saturate(cos(x * y) + sin(x * y));
-
-                float4 lowLerp = lerp(lowEnd, midEnd, saturate(fn * 2));
-                float4 highLerp = lerp(midEnd, highEnd, saturate(fn / 2 + .5f));
-
-                return lerp(lowLerp, highLerp, fn) + tex2D(_MainTex, i.uv) - (((i.uv.x * 5000) % 200 < 10) | ((i.uv.y * 5000) % 200 < 10)) * .05f;
+                return lerp(BaseColor, CircleColor, inCircle);
             }
             ENDCG
         }
