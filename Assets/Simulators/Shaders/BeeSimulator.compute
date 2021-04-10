@@ -61,15 +61,14 @@ void plot(in float2 where)
 // PSO kernel
 // 
 // Runs the Particle Swarm Optimisation algorithm.
-[numthreads(32,32,1)]
+[numthreads(1024,1,1)]
 void CSSimulate (uint3 id : SV_DispatchThreadID)
 {
     // Gather particle data
-    int x = id.x;
-    int y = id.y;
+    int i = id.x;
 
-    float2 position = Particles[x].position;
-    float2 velocity = Particles[x].velocity;
+    float2 position = Particles[i].position;
+    float2 velocity = Particles[i].velocity;
 
 
     // Draw particle pixel
@@ -86,8 +85,8 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 
 
     // Apply particle data
-    Particles[x].position = position;
-    Particles[x].velocity = velocity;
+    Particles[i].position = position;
+    Particles[i].velocity = velocity;
 }
 
 // Dissipation kernel

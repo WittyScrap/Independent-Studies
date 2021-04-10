@@ -147,7 +147,7 @@ namespace Simulators
 
                 _step -= 1;
 
-                simulator.Dispatch(_csDissipate, ParticlesCount / 32, ParticlesCount / 32, 1);
+                simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
                 simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);
             }
             else if (!_completed)

@@ -51,12 +51,6 @@ namespace Simulators
         public ComputeShader simulator;
 
         /// <summary>
-        /// A reference to the previous iteration of the simulation system.
-        /// </summary>
-        [Tooltip("A reference to the previous iteration of the simulation system.")]
-        public PSOSimulatorDispatcher psoSimulator;
-
-        /// <summary>
         /// How many simulation steps should be performed.
         /// </summary>
         [Tooltip("How many simulation steps should be performed.")]
@@ -69,7 +63,7 @@ namespace Simulators
         public float commsDistance = 15.0f;
 
 
-        private unsafe void DetectOptions(Texture2D pso)
+        private unsafe bool DetectOptions(Texture2D pso)
         {
             List<Vector3> detectedOptions = new List<Vector3>();
 
@@ -100,6 +94,23 @@ namespace Simulators
 
             _optionsCount = foundEntries;
 
+            if (_optionsCount <= 1)
+            {
+#if DEBUG
+                Debug.Log("Only one (or no) option(s) detected, terminating...");
+
+                if (_optionsCount == 1)
+				{
+                    Debug.Log($"Final position: {_options[0]}");
+				}
+                else
+				{
+                    Debug.Log("No options detected.");
+				}
+#endif
+                return false;
+            }
+
 #if DEBUG
             Debug.Log($"Found a total of {_optionsCount} options out of a maximum of {MaxOptions}, refining output...");
 #endif
@@ -111,7 +122,7 @@ namespace Simulators
             for (int i = 0; i < ParticlesCount; i += 1)
 			{
                 _particles[i].position = _options[Random.Range(0, _optionsCount)] * new Vector2(_particleSpace.width, _particleSpace.height);
-                _particles[i].velocity = Random.insideUnitCircle * 0.001f;
+                _particles[i].velocity = Random.insideUnitCircle * 0.01f;
                 _particles[i].preference = new Vector3(_particles[i].position.x, _particles[i].position.y, Random.value);
 			}
 
@@ -134,6 +145,8 @@ namespace Simulators
 #if DEBUG
             Debug.Log("Simulator shader ready.");
 #endif
+
+            return true;
         }
 
         private void Blit(Texture2D destination, RenderTexture source)
@@ -166,13 +179,14 @@ namespace Simulators
             );
 
             Blit(pso, output);
-            DetectOptions(pso);
 
-            Destroy(psoSimulator);
+            if (DetectOptions(pso))
+            {
+                enabled = true;
+                _step = iterations;
+            }
+
             Destroy(pso);
-
-            _step = iterations;
-            enabled = true;
         }
 
         private void Awake()
@@ -185,8 +199,8 @@ namespace Simulators
         {
             if (_step > 0)
             {
-                simulator.Dispatch(_csDissipate, ParticlesCount / 32, ParticlesCount / 32, 1);
-                simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);
+                simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
+                simulator.Dispatch(_csSimulate, ParticlesCount / 1024, 1, 1);
 
                 _step -= 1;
             }
