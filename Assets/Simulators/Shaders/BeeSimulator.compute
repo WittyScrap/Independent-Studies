@@ -12,19 +12,14 @@ struct Particle
 {
     float2 position;
     float2 velocity;
+    float3 preference;
 };
 
 /** Data */
 
 RWTexture2D<float3>             ParticleSpace;
 RWStructuredBuffer<Particle>    Particles;
-StructuredBuffer<float2>        Options;
 
-int OutputWidth;
-int OutputHeight;
-
-float C1;
-float C2;
 float CommsDistance;
 
 
@@ -38,9 +33,9 @@ float random(in float2 uv)
 
 #define R (random(position) * 2.f)
 
-void iterate(inout float2 velocity, in float2 localBest, in float2 position, in float2 globalBest)
+void iterate(inout float2 velocity)
 {
-    velocity = velocity * W + (localBest - position) * C1 * R + (globalBest - position) * C2 * R;
+    velocity = 0;
 }
 
 void plot(in float2 where)
@@ -81,28 +76,9 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     plot(position);
 
 
-    // Modified PSO simulation
-    float prevValue = fnSolutionSpace(Particles[x].localBest);
-    float bestValue = fnSolutionSpace(Particles[x].globalBest);
-    float currValue = fnSolutionSpace(position);
-
-    if (currValue CMP prevValue)
-    {
-        Particles[x].localBest = position;
-    }
-
-    if (currValue CMP bestValue)
-    {
-        Particles[x].globalBest = position;
-    }
-
-    if (length(Particles[y].position - position) < CommsDistance &&
-        fnSolutionSpace(Particles[y].globalBest) CMP fnSolutionSpace(Particles[x].globalBest))
-    {
-        Particles[x].globalBest = Particles[y].globalBest;
-    }
-
-    iterate(velocity, Particles[x].localBest, position, Particles[x].globalBest);
+    // Bee-inspired algorithm
+    iterate(velocity);
+    // TODO
 
     
     // Advance by current velocity
@@ -120,16 +96,5 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 [numthreads(32,32,1)]
 void CSDissipate(uint3 id : SV_DispatchThreadID)
 {
-    float3 sum = 0;
-    int2 uv = (int2)id;
-
-    for (int x = max((uv.x - 1), 0); x < uv.x + 2; x += 1)
-    {
-        for (int y = max((uv.y - 1), 0); y < uv.y + 2; y += 1)
-        {
-            sum += ParticleSpace[int2(x, y)];
-        }
-    }
-
     ParticleSpace[id.xy] = 0;
 }

@@ -54,7 +54,7 @@ Shader "Hidden/BeesBackground"
                     inCircle |= length(i.uv - _Options[x].xy) < PointRadius;
                 }
 
-                return lerp(BaseColor, CircleColor, inCircle);
+                return lerp(BaseColor, CircleColor, inCircle) - tex2D(_MainTex, i.uv);
             }
             ENDCG
         }

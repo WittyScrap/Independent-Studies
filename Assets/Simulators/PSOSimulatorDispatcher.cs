@@ -87,7 +87,7 @@ public class PSOSimulatorDispatcher : MonoBehaviour
     /// Completed simulation event handler.
     /// Event will only trigger once, when the iterations counter has reached its limit.
     /// </summary>
-    public event SimulationEvent simulationComplete;
+    public event SimulationEvent SimulationComplete;
 
 
 #if UNITY_EDITOR
@@ -150,12 +150,12 @@ public class PSOSimulatorDispatcher : MonoBehaviour
 
             _step -= 1;
 
-            simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
+            simulator.Dispatch(_csDissipate, ParticlesCount / 32, ParticlesCount / 32, 1);
             simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);
         }
         else if (!_completed)
         {
-            simulationComplete.Invoke(_particleSpace);
+            SimulationComplete.Invoke(_particleSpace);
             _completed = true;
         }
     }
