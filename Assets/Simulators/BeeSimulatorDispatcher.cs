@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
-namespace Assets.Simulators
+namespace Simulators
 {
     /// <summary>
     /// Handles dispatching initialisation data and commands to the Bee simulation compute shader.
     /// Requires the output of the <see cref="PSOSimulatorDispatcher"/> to operate.
     /// </summary>
-    public class BeeSimulatorDispatcher : MonoBehaviour
+    public sealed class BeeSimulatorDispatcher : MonoBehaviour
     {
         struct Particle
         {
@@ -19,8 +19,6 @@ namespace Assets.Simulators
 
             public Vector3 preference;
         };
-
-        private const int DownsizeFactor = 8;
 
         private const int MaxOptions = 5;
 
@@ -113,7 +111,7 @@ namespace Assets.Simulators
             for (int i = 0; i < ParticlesCount; i += 1)
 			{
                 _particles[i].position = _options[Random.Range(0, _optionsCount)] * new Vector2(_particleSpace.width, _particleSpace.height);
-                _particles[i].velocity = Random.insideUnitCircle;
+                _particles[i].velocity = Random.insideUnitCircle * 0.001f;
                 _particles[i].preference = new Vector3(_particles[i].position.x, _particles[i].position.y, Random.value);
 			}
 
@@ -148,12 +146,18 @@ namespace Assets.Simulators
             RenderTexture.ReleaseTemporary(temporary);
         }
 
-        private void Initialize(RenderTexture output)
+        /// <summary>
+        /// Initializes the simulator from the output of the previous simulation
+        /// step (<see cref="PSOSimulatorDispatcher"/>).
+        /// </summary>
+        public void Initialize(RenderTexture output)
         {
             _particleSpace = new RenderTexture(output.width, output.height, sizeof(float) * 3, DefaultFormat.LDR)
             {
                 enableRandomWrite = true
-            };
+            }; 
+            
+            const int DownsizeFactor = 8;
 
             Texture2D pso = new Texture2D
             (
@@ -174,13 +178,12 @@ namespace Assets.Simulators
         private void Awake()
         {
             _background = new Material(Shader.Find("Hidden/BeesBackground"));
-            psoSimulator.SimulationComplete += Initialize;
             enabled = false;
         }
 
         private void Update()
         {
-            while (_step > 0)
+            if (_step > 0)
             {
                 simulator.Dispatch(_csDissipate, ParticlesCount / 32, ParticlesCount / 32, 1);
                 simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);

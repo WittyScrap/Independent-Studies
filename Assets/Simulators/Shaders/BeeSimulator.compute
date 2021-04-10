@@ -77,7 +77,7 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 
 
     // Bee-inspired algorithm
-    iterate(velocity);
+    // iterate(velocity);
     // TODO
 
     
