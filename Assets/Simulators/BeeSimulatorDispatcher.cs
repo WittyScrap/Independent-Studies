@@ -22,7 +22,7 @@ namespace Simulators
 
         private const int MaxOptions = 5;
 
-        private const int ParticlesCount = 512;
+        private const int ParticlesCount = 1024;
 
         private int _step = 0;
 
@@ -118,12 +118,14 @@ namespace Simulators
             _background.SetVectorArray("_Options", _options);
             _background.SetInt("_TotalOptions", _optionsCount);
 
+            const float SpawnRadius = 10;
+
             // Initialize particles
             for (int i = 0; i < ParticlesCount; i += 1)
 			{
-                _particles[i].position = _options[Random.Range(0, _optionsCount)] * new Vector2(_particleSpace.width, _particleSpace.height);
-                _particles[i].velocity = Random.insideUnitCircle * 0.01f;
-                _particles[i].preference = new Vector3(_particles[i].position.x, _particles[i].position.y, Random.value);
+                _particles[i].position = _particleSpace.GetSize() / 2 + Random.insideUnitCircle * SpawnRadius;
+                _particles[i].velocity = VectorExtensions.RandomUnitCircumference();
+                _particles[i].preference = VectorExtensions.Assemble(_options[Random.Range(0, _optionsCount)], Random.value);
 			}
 
 #if DEBUG

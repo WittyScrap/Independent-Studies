@@ -31,16 +31,9 @@ float random(in float2 uv)
     return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453123);
 }
 
-#define R (random(position) * 2.f)
-
-void iterate(inout float2 velocity)
-{
-    velocity = 0;
-}
-
 void plot(in float2 where)
 {
-    const float partcileAdd = 0.005f;
+    const float partcileAdd = 0.01f;
     const int radius = 3;
 
     ParticleSpace[where] += partcileAdd * 2;
@@ -54,8 +47,6 @@ void plot(in float2 where)
     }
 }
 
-#undef R
-
 /** Kernels */
 
 // PSO kernel
@@ -64,29 +55,16 @@ void plot(in float2 where)
 [numthreads(1024,1,1)]
 void CSSimulate (uint3 id : SV_DispatchThreadID)
 {
-    // Gather particle data
-    int i = id.x;
-
-    float2 position = Particles[i].position;
-    float2 velocity = Particles[i].velocity;
-
-
     // Draw particle pixel
-    plot(position);
+    plot(Particles[id.x].position);
 
-
+    
     // Bee-inspired algorithm
-    // iterate(velocity);
-    // TODO
+
 
     
     // Advance by current velocity
-    position += velocity;
-
-
-    // Apply particle data
-    Particles[i].position = position;
-    Particles[i].velocity = velocity;
+    // Particles[id.x].position += Particles[id.x].velocity;
 }
 
 // Dissipation kernel

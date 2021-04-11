@@ -102,7 +102,7 @@ namespace Simulators
             for (int i = 0; i < ParticlesCount; i += 1)
             {
                 _psoParticles[i].position = new Vector2(Random.Range(0, OutputWidth), Random.Range(0, OutputHeight));
-                _psoParticles[i].velocity = Random.insideUnitCircle;
+                _psoParticles[i].velocity = VectorExtensions.RandomUnitCircumference();
                 _psoParticles[i].localBest = _psoParticles[i].position;
                 _psoParticles[i].globalBest = _psoParticles[i].position;
             }
