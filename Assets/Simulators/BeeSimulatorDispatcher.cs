@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using Int32 = System.Int32;
+using Single = System.Single;
 
 namespace Simulators
 {
@@ -13,25 +15,23 @@ namespace Simulators
     {
         struct Particle
         {
-            public Vector2 position;
+            public Vector2      position;
             
-            public Vector2 velocity;
+            public Vector2      velocity;
 
-            public Vector3 preference;
+            public Int32        preference;
+
+            public Single       strength;
         };
 
         private const int MaxOptions = 5;
 
         private const int ParticlesCount = 1024;
 
-        private int _step = 0;
-
-#if DEBUG
-        [SerializeField]
-#endif
-        private RenderTexture _particleSpace;
-
-        private ComputeBuffer _bufferParticles;
+        private static readonly Color[] OptionsColors = new Color[MaxOptions]
+        {
+            Color.red, Color.green, Color.blue, Color.yellow, Color.cyan
+        };
 
         private readonly Vector4[] _options = new Vector4[MaxOptions];
 
@@ -44,6 +44,19 @@ namespace Simulators
         private int _csSimulate;
 
         private int _csDissipate;
+
+        private int _step = 0;
+
+#if DEBUG
+        [SerializeField]
+#endif
+        private RenderTexture _particleSpace;
+
+        private ComputeBuffer _bufferParticles;
+
+        private ComputeBuffer _bufferOptions;
+
+        private ComputeBuffer _bufferColors;
 
         /// <summary>
         /// The compute shader containing the current desired simulator.
@@ -61,6 +74,13 @@ namespace Simulators
         /// </summary>
         [Tooltip("The distance for communications.")]
         public float commsDistance = 15.0f;
+
+        /// <summary>
+        /// Whether or not the simulation should be paused when this
+        /// stage is initialized.
+        /// </summary>
+        [Tooltip("Whether or not the simulation should be paused when this stage is initialized.")]
+        public bool pauseOnCarryover = false;
 
 
         private unsafe bool DetectOptions(Texture2D pso)
@@ -101,7 +121,7 @@ namespace Simulators
 
                 if (_optionsCount == 1)
 				{
-                    Debug.Log($"Final position: {_options[0]}");
+                    Debug.Log($"Final position: {new Vector2(_options[0].x, _options[0].y) * pso.GetSize()}; Final value: {detectedOptions[0].z}");
 				}
                 else
 				{
@@ -116,17 +136,22 @@ namespace Simulators
 #endif
 
             _background.SetVectorArray("_Options", _options);
+            _background.SetColorArray("_Colors", OptionsColors);
             _background.SetInt("_TotalOptions", _optionsCount);
 
-            const float SpawnRadius = 10;
+            const float SpawnRadius = 50;
 
             // Initialize particles
             for (int i = 0; i < ParticlesCount; i += 1)
-			{
+            {
+                int choice = Random.Range(0, _optionsCount);
+
                 _particles[i].position = _particleSpace.GetSize() / 2 + Random.insideUnitCircle * SpawnRadius;
                 _particles[i].velocity = VectorExtensions.RandomUnitCircumference();
-                _particles[i].preference = VectorExtensions.Assemble(_options[Random.Range(0, _optionsCount)], Random.value);
-			}
+                _particles[i].preference = choice;
+                _particles[i].strength = Random.value;
+            }
+
 
 #if DEBUG
             Debug.Log($"{ParticlesCount} particles initialized; preparing simulator shader...");
@@ -135,7 +160,17 @@ namespace Simulators
             _bufferParticles = new ComputeBuffer(ParticlesCount, sizeof(Particle));
             _bufferParticles.SetData(_particles);
 
+            _bufferOptions = new ComputeBuffer(MaxOptions, sizeof(Vector4));
+            _bufferOptions.SetData(_options);
+
+            _bufferColors = new ComputeBuffer(MaxOptions, sizeof(Color));
+            _bufferColors.SetData(OptionsColors);
+
             simulator.SetFloat("CommsDistance", commsDistance);
+            simulator.SetFloat("SpawnRadius", SpawnRadius);
+            simulator.SetInt("ParticlesCount", ParticlesCount);
+            simulator.SetInt("OutputWidth", _particleSpace.width);
+            simulator.SetInt("OutputHeight", _particleSpace.height);
 
             _csSimulate = simulator.FindKernel("CSSimulate");
             _csDissipate = simulator.FindKernel("CSDissipate");
@@ -143,10 +178,12 @@ namespace Simulators
             simulator.SetTexture(_csSimulate, "ParticleSpace", _particleSpace, 0);
             simulator.SetTexture(_csDissipate, "ParticleSpace", _particleSpace, 0);
             simulator.SetBuffer(_csSimulate, "Particles", _bufferParticles);
+            simulator.SetBuffer(_csSimulate, "Options", _bufferOptions);
+            simulator.SetBuffer(_csSimulate, "OptionsColors", _bufferColors);
 
 #if DEBUG
             Debug.Log("Simulator shader ready.");
-#endif
+#endif 
 
             return true;
         }
@@ -184,6 +221,13 @@ namespace Simulators
 
             if (DetectOptions(pso))
             {
+#if DEBUG
+                if (pauseOnCarryover)
+				{
+                    Debug.Break();
+				}
+#endif
+
                 enabled = true;
                 _step = iterations;
             }
@@ -202,7 +246,7 @@ namespace Simulators
             if (_step > 0)
             {
                 simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
-                simulator.Dispatch(_csSimulate, ParticlesCount / 1024, 1, 1);
+                simulator.Dispatch(_csSimulate, ParticlesCount / 512, 1, 1);
 
                 _step -= 1;
             }
@@ -221,7 +265,20 @@ namespace Simulators
                 Destroy(_particleSpace);
             }
 
-            _bufferParticles.Dispose();
+            if (_bufferParticles != null)
+            {
+                _bufferParticles.Dispose();
+            }
+
+            if (_bufferOptions != null)
+			{
+                _bufferOptions.Dispose();
+			}
+
+            if (_bufferColors != null)
+			{
+                _bufferColors.Dispose();
+			}
         }
     }
 }

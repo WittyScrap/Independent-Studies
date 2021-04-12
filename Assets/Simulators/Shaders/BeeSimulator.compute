@@ -4,6 +4,11 @@
 
 /** Structures */
 
+#define Inertia .5f
+#define MaxNeighbours 10
+#define MaxOptions 5
+#define MovementSpeed 1.f
+
 //
 //  Represents a single particle for the Particle Swarm Optimisation
 //  based algorithm.
@@ -12,15 +17,32 @@ struct Particle
 {
     float2 position;
     float2 velocity;
-    float3 preference;
+    int    preference;
+    float  strength;
+};
+
+//
+// Tracks which particle has expressed preference for which
+// option and by how much.
+//
+struct OptionTracker
+{
+    float strength;
+    int participants;
 };
 
 /** Data */
 
 RWTexture2D<float3>             ParticleSpace;
 RWStructuredBuffer<Particle>    Particles;
+StructuredBuffer<float4>        Options;
+StructuredBuffer<float4>        OptionsColors;
 
+int ParticlesCount;
+int OutputWidth;
+int OutputHeight;
 float CommsDistance;
+float SpawnRadius;
 
 
 /** Functions */ 
@@ -31,9 +53,9 @@ float random(in float2 uv)
     return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453123);
 }
 
-void plot(in float2 where)
+void plot(in float2 where, in float4 color)
 {
-    const float partcileAdd = 0.01f;
+    const float partcileAdd = 0.5f;
     const int radius = 3;
 
     ParticleSpace[where] += partcileAdd * 2;
@@ -42,7 +64,7 @@ void plot(in float2 where)
     {
         for (int y = where.y - radius; y < where.y + radius; y += 1)
         {
-            ParticleSpace[int2(x, y)] += partcileAdd * (1 - (length(float2(x, y) - where) / (float)radius));
+            ParticleSpace[int2(x, y)] += color.rgb * (partcileAdd * (1 - (length(float2(x, y) - where) / (float)radius)));
         }
     }
 }
@@ -52,19 +74,82 @@ void plot(in float2 where)
 // PSO kernel
 // 
 // Runs the Particle Swarm Optimisation algorithm.
-[numthreads(1024,1,1)]
+[numthreads(512,1,1)]
 void CSSimulate (uint3 id : SV_DispatchThreadID)
 {
-    // Draw particle pixel
-    plot(Particles[id.x].position);
+    Particle particle = Particles[id.x];
+    plot(particle.position, OptionsColors[particle.preference]);
 
-    
-    // Bee-inspired algorithm
+    int i;
+    OptionTracker optionTrackers[MaxOptions];
 
+    for (i = 0; i < MaxOptions; i += 1)
+    {
+        optionTrackers[i].strength = 0;
+        optionTrackers[i].participants = 0;
+    }
 
-    
+    {
+        int neighbours[MaxNeighbours];
+        int neighboursCount = 0;
+
+        for (i = 0; i < MaxNeighbours; i += 1)
+        {
+            neighbours[i] = 0;
+        }
+
+        // Find nearby particles and save them as neighbours
+
+        for (i = 0; i < ParticlesCount && neighboursCount < MaxNeighbours; i += 1)
+        {
+            if (length(Particles[i].position - particle.position) < CommsDistance)
+            {
+                neighbours[neighboursCount] = i;
+                neighboursCount += 1;
+            }
+        }
+
+        // Observe broadcast preference and its weight, tally up a count of which option
+        // is the most preferred in the nearby area.
+
+        for (i = 0; i < neighboursCount; i += 1)
+        {
+           optionTrackers[Particles[neighbours[i]].preference].strength += Particles[neighbours[i]].strength;
+           optionTrackers[Particles[neighbours[i]].preference].participants += 1;
+        }
+    }
+
+    optionTrackers[particle.preference].strength += particle.strength;
+    optionTrackers[particle.preference].participants += 1;
+
+    // Pick best value, convert to it - if the best value ends up being the same as what we had, a no-conversion case
+    // will be observed.
+
+    int bestOption = 0;
+
+    for (i = 0; i < MaxOptions; i += 1)
+    {
+        if (optionTrackers[i].strength > optionTrackers[bestOption].strength)
+        {
+            bestOption = i;
+        }
+    }
+
+    particle.preference = bestOption;
+    particle.strength = optionTrackers[bestOption].strength / (float)optionTrackers[bestOption].participants;
+
+    // Pick a random point to fly towards
+
+    float x = random(particle.position.xy + particle.velocity.yx) * 2 - 1;
+    float y = random(particle.position.yx + particle.velocity.xy) * 2 - 1;
+
+    float2 target = (float2(x, y) * SpawnRadius * 20) + (float2(OutputWidth, OutputHeight) / 2.f);
+    particle.velocity = normalize(target - particle.position) * MovementSpeed;
+
     // Advance by current velocity
-    // Particles[id.x].position += Particles[id.x].velocity;
+
+    particle.position += particle.velocity;
+    Particles[id.x] = particle;
 }
 
 // Dissipation kernel

@@ -16,11 +16,14 @@ Shader "Hidden/BeesBackground"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-            #define PointRadius .05f
+            #define CircleRadius .01f
             #define BaseColor float4(1, 1, 1, 1)
-            #define CircleColor float4(1, 0.75f, 0.75f, 1)
+            #define MinimumBrightness 0.25f
+            #define MaximumBrightness 0.5f
+            #define ParticleBrightness 0.5f
 
             float4 _Options[5];
+            float4 _Colors[5];
             int _TotalOptions;
 
             struct appdata
@@ -47,14 +50,18 @@ Shader "Hidden/BeesBackground"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                int inCircle = 0;
+                float x = (i.uv.x * 2 - 1) * 3;
+                float y = (i.uv.y * 2 - 1) * 3;
 
-                for (int x = 0; x < _TotalOptions; x += 1)
+                float4 circleColors = lerp(MinimumBrightness, MaximumBrightness, saturate(cos(x * y) + sin(x * y)));
+
+                for (int p = 0; p < _TotalOptions; p += 1)
                 {
-                    inCircle |= length(i.uv - _Options[x].xy) < PointRadius;
+                    circleColors += (length(i.uv - _Options[p].xy) < CircleRadius) * _Colors[p];
                 }
-
-                return lerp(BaseColor, CircleColor, inCircle) - tex2D(_MainTex, i.uv);
+                
+                float4 particles = tex2D(_MainTex, i.uv);
+                return circleColors + particles * ParticleBrightness;
             }
             ENDCG
         }
