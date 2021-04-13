@@ -5,7 +5,7 @@
 /** Structures */
 
 #define Inertia .5f
-#define MaxNeighbours 10
+#define MaxNeighbours 15
 #define MaxOptions 5
 #define MovementSpeed 1.f
 

@@ -33,9 +33,15 @@ namespace Simulators
             Color.red, Color.green, Color.blue, Color.yellow, Color.cyan
         };
 
+        private static readonly Color MarkerColor = Color.white;
+
         private readonly Vector4[] _options = new Vector4[MaxOptions];
 
         private readonly Particle[] _particles = new Particle[ParticlesCount];
+
+        private static Texture2D _markerTexture;
+
+        private static GUIStyle _markerStyle;
 
         private int _optionsCount = 0;
 
@@ -46,6 +52,10 @@ namespace Simulators
         private int _csDissipate;
 
         private int _step = 0;
+
+        private Vector2 _finalLocation = -Vector2.one * 1000;
+
+        private bool _hasFinalLocation = false;
 
 #if DEBUG
         [SerializeField]
@@ -120,8 +130,9 @@ namespace Simulators
                 Debug.Log("Only one (or no) option(s) detected, terminating...");
 
                 if (_optionsCount == 1)
-				{
-                    Debug.Log($"Final position: {new Vector2(_options[0].x, _options[0].y) * pso.GetSize()}; Final value: {detectedOptions[0].z}");
+                {
+                    _finalLocation = _options[0];
+                    Debug.Log($"Final position: {_finalLocation}; Final value: {detectedOptions[0].z}");
 				}
                 else
 				{
@@ -228,17 +239,56 @@ namespace Simulators
 				}
 #endif
 
-                enabled = true;
                 _step = iterations;
             }
 
             Destroy(pso);
+            enabled = true;
         }
+
+        private void FindFinalLocation()
+		{
+            if (_bufferParticles != null)
+            {
+                _bufferParticles.GetData(_particles);
+
+                int[] votes = new Int32[MaxOptions];
+
+                for (int i = 0; i < ParticlesCount; i += 1)
+                {
+                    votes[_particles[i].preference] += 1;
+                }
+
+                int highestIndex = 0;
+
+                for (int i = 0; i < MaxOptions; i += 1)
+				{
+                    if (votes[i] > votes[highestIndex])
+					{
+                        highestIndex = i;
+					}
+				}
+
+                _finalLocation = _options[highestIndex];
+
+#if DEBUG
+                Debug.Log($"Final location: {_finalLocation}");
+#endif
+            }
+		}
 
         private void Awake()
         {
             _background = new Material(Shader.Find("Hidden/BeesBackground"));
             enabled = false;
+
+            if (!_markerTexture)
+			{
+                _markerTexture = new Texture2D(1, 1);
+                _markerTexture.SetPixel(0, 0, MarkerColor);
+                _markerStyle = new GUIStyle();
+                _markerStyle.normal.background = _markerTexture;
+			}
         }
 
         private void Update()
@@ -250,9 +300,29 @@ namespace Simulators
 
                 _step -= 1;
             }
+            else if (!_hasFinalLocation)
+			{
+                FindFinalLocation();
+                _hasFinalLocation = true;
+			}
         }
 
-        private void OnRenderImage(RenderTexture source, RenderTexture destination)
+		private void OnGUI()
+		{
+            const int CrosshairSize = 50;
+            const int CrosshairThickness = 1;
+
+            float pointX = (_finalLocation.x * Screen.width);
+            float pointY = ((1 - _finalLocation.y) * Screen.height);
+
+            float startX = pointX - (CrosshairSize / 2);
+            float startY = pointY - (CrosshairSize / 2);
+
+            GUI.Box(new Rect(pointX, startY, CrosshairThickness, CrosshairSize + CrosshairThickness), string.Empty, _markerStyle);
+            GUI.Box(new Rect(startX, pointY, CrosshairSize + CrosshairThickness, CrosshairThickness), string.Empty, _markerStyle);
+		}
+
+		private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             Graphics.Blit(_particleSpace, destination, _background);
         }
