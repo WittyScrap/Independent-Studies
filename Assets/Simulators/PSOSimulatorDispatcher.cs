@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Experimental.Rendering;
@@ -99,10 +100,15 @@ namespace Simulators
             _decay = (1.0f - w.x) / iterations;
             _step = iterations;
 
+            const float SpawnRadius = OutputWidth / 16;
+            const float InitialVelocity = 50.0f;
+
+            Vector2 middle = new Vector2(OutputWidth / 2, OutputHeight / 2);
+
             for (int i = 0; i < ParticlesCount; i += 1)
             {
-                _psoParticles[i].position = new Vector2(Random.Range(0, OutputWidth), Random.Range(0, OutputHeight));
-                _psoParticles[i].velocity = VectorExtensions.RandomUnitCircumference();
+                _psoParticles[i].position = middle + (UnityEngine.Random.insideUnitCircle * SpawnRadius);
+                _psoParticles[i].velocity = VectorExtensions.RandomUnitCircumference() * InitialVelocity;
                 _psoParticles[i].localBest = _psoParticles[i].position;
                 _psoParticles[i].globalBest = _psoParticles[i].position;
             }
