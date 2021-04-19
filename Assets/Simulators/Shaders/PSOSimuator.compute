@@ -47,10 +47,12 @@ void iterate(inout float2 velocity, in float2 localBest, in float2 position, in 
     velocity = velocity * W + (localBest - position) * C1 * R + (globalBest - position) * C2 * R;
 }
 
+#undef R
+
 void plot(in float2 where)
 {
     const float partcileAdd = 0.005f;
-    const int radius = 3;
+    const int radius = 4;
 
     ParticleSpace[where] += partcileAdd * 2;
 
@@ -62,8 +64,6 @@ void plot(in float2 where)
         }
     }
 }
-
-#undef R
 
 float2 iIf(bool _condition, float2 _true, float2 _false)
 {
@@ -98,12 +98,18 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     Particles[x].localBest = iIf(currValue CMP prevValue, position, Particles[x].localBest);
     Particles[x].globalBest = iIf(currValue CMP bestValue, position, Particles[x].globalBest);
 
-    if (length(Particles[y].position - position) < CommsDistance &&
-        fnSolutionSpace(Particles[y].globalBest) CMP fnSolutionSpace(Particles[x].globalBest))
-    {
-        Particles[x].globalBest = Particles[y].globalBest;
-    }
+    float2 commsGlobalBest = Particles[y].globalBest + float2 // Add a random error amount
+    (
+        random(float2(Particles[x].position.x, Particles[y].position.y)) * 2.f - 1,
+        random(float2(Particles[y].position.y, Particles[x].position.x)) * 2.f - 1
+    );
 
+    if (length(Particles[y].position - position) < CommsDistance &&
+        fnSolutionSpace(commsGlobalBest) CMP fnSolutionSpace(Particles[x].globalBest))
+    { 
+        Particles[x].globalBest = commsGlobalBest;
+    }
+ 
     iterate(velocity, Particles[x].localBest, position, Particles[x].globalBest);
 
     

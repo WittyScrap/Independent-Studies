@@ -93,7 +93,7 @@ namespace Simulators
         }
 #endif
 
-        private unsafe void Awake()
+        public unsafe void Awake()
         {
             _background = new Material(Shader.Find("Hidden/PSOBackground"));
 
@@ -116,8 +116,11 @@ namespace Simulators
             _bufferParticles = new ComputeBuffer(ParticlesCount, sizeof(Particle));
             _bufferParticles.SetData(_psoParticles);
 
-            _particleSpace = new RenderTexture(OutputWidth, OutputHeight, sizeof(float) * 3, DefaultFormat.LDR);
-            _particleSpace.enableRandomWrite = true;
+            _particleSpace = new RenderTexture(OutputWidth, OutputHeight, sizeof(float) * 3, DefaultFormat.LDR)
+            {
+                enableRandomWrite = true
+            };
+
             _particleSpace.Create();
 
             simulator.SetInt("OutputWidth", OutputWidth);
@@ -140,7 +143,7 @@ namespace Simulators
             Destroy(this); // Change da world. My final message. Goodbye.
         }
 
-        private void Update()
+        public void Update()
         {
             if (_step > 0)
             {
@@ -163,12 +166,12 @@ namespace Simulators
             }
         }
 
-        private void OnRenderImage(RenderTexture src, RenderTexture dest)
+        public void OnRenderImage(RenderTexture src, RenderTexture dest)
         {
             Graphics.Blit(_particleSpace, dest, _background);
         }
 
-        private void OnDestroy()
+        public void OnDestroy()
         {
             _bufferParticles.Release();
         }

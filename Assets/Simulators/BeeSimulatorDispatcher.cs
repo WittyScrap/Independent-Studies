@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -155,12 +156,13 @@ namespace Simulators
             // Initialize particles
             for (int i = 0; i < ParticlesCount; i += 1)
             {
-                int choice = Random.Range(0, _optionsCount);
+                // Increase entropy by increasing the number of possible outcomes
+                int choice = UnityEngine.Random.Range(0, _optionsCount * 50) % (_optionsCount - 1);
 
-                _particles[i].position = _particleSpace.GetSize() / 2 + Random.insideUnitCircle * SpawnRadius;
+                _particles[i].position = _particleSpace.GetSize() / 2 + UnityEngine.Random.insideUnitCircle * SpawnRadius;
                 _particles[i].velocity = VectorExtensions.RandomUnitCircumference();
                 _particles[i].preference = choice;
-                _particles[i].strength = Random.value;
+                _particles[i].strength = UnityEngine.Random.value;
             }
 
 
@@ -215,6 +217,8 @@ namespace Simulators
         /// </summary>
         public void Initialize(RenderTexture output)
         {
+            UnityEngine.Random.InitState(Guid.NewGuid().GetHashCode());
+
             _particleSpace = new RenderTexture(output.width, output.height, sizeof(float) * 3, DefaultFormat.LDR)
             {
                 enableRandomWrite = true

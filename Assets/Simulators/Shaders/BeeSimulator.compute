@@ -112,10 +112,15 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
         // Observe broadcast preference and its weight, tally up a count of which option
         // is the most preferred in the nearby area.
 
+        float2 seeder = particle.position.yx;
+
         for (i = 0; i < neighboursCount; i += 1)
         {
-           optionTrackers[Particles[neighbours[i]].preference].strength += Particles[neighbours[i]].strength;
-           optionTrackers[Particles[neighbours[i]].preference].participants += 1;
+            float strength = Particles[neighbours[i]].strength + random(seeder);
+            optionTrackers[Particles[neighbours[i]].preference].strength += strength;
+            optionTrackers[Particles[neighbours[i]].preference].participants += 1;
+
+            seeder = (seeder * strength * 2 - 1.f).yx;
         }
     }
 
