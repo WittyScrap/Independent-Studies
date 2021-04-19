@@ -75,6 +75,11 @@ float2 iIf(bool _condition, float2 _true, float2 _false)
     return (_condition * _true) + (!_condition * _false);
 }
 
+int iIf(bool _condition, int _true, int _false)
+{
+    return (_condition * _true) + (!_condition * _false);
+}
+
 /** Kernels */
 
 // PSO kernel
