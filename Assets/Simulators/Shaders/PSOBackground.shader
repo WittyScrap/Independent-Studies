@@ -41,16 +41,15 @@ Shader "Hidden/PSOBackground"
 
             sampler2D _MainTex;
 
+            #include "SolutionSpace.cginc"
+
             fixed4 frag (v2f i) : SV_Target
             {
                 const float4 lowEnd = float4(m, m, 1, 1);
                 const float4 midEnd = float4(m, 1, m, 1);
                 const float4 highEnd = float4(1, m, m, 1);
 
-                float x = (i.uv.x * 2 - 1) * 3;
-                float y = (i.uv.y * 2 - 1) * 3;
-
-                float fn = saturate(cos(x * y) + sin(x * y));
+                float fn = saturate(fnSolutionSpace(i.uv, 1));
 
                 float4 lowLerp = lerp(lowEnd, midEnd, saturate(fn * 2));
                 float4 highLerp = lerp(midEnd, highEnd, saturate(fn / 2 + .5f));

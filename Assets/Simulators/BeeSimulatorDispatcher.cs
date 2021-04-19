@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -96,7 +96,8 @@ namespace Simulators
 
         private unsafe bool DetectOptions(Texture2D pso)
         {
-            List<Vector3> detectedOptions = new List<Vector3>();
+            List<Vector3> detectedOptions = new List<Vector3>(pso.width * pso.height);
+            float PresenceThreshold = 0.1f;
 
             for (int x = 0; x < pso.width; x += 1)
             {
@@ -104,7 +105,7 @@ namespace Simulators
                 {
                     float cell = pso.GetPixel(x, y).r;
 
-                    if (cell > .25f)
+                    if (cell > PresenceThreshold)
                     {
                         detectedOptions.Add(new Vector3(x / (float)pso.width, y / (float)pso.height, cell));
                     }
@@ -112,7 +113,7 @@ namespace Simulators
             }
 
             // Now sort the list based on the strongest cell values
-            detectedOptions.Sort((optionA, optionB) => (int)(optionB.z - optionA.z));
+            detectedOptions = detectedOptions.OrderByDescending(option => option.z).ToList();
             int foundEntries = Mathf.Min(detectedOptions.Count, MaxOptions);
 
             for (int i = 0; i < foundEntries; i += 1)

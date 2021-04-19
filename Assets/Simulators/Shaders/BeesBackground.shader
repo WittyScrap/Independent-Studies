@@ -22,9 +22,6 @@ Shader "Hidden/BeesBackground"
             #define MaximumBrightness 0.5f
             #define ParticleBrightness 0.5f
 
-            float4 _Options[5];
-            float4 _Colors[5];
-            int _TotalOptions;
 
             struct appdata
             {
@@ -47,13 +44,17 @@ Shader "Hidden/BeesBackground"
             }
 
             sampler2D _MainTex;
+            sampler2D _PSO;
+            float4 _Options[5];
+            float4 _Colors[5];
+            int _TotalOptions;
+
+            #include "SolutionSpace.cginc"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                float x = (i.uv.x * 2 - 1) * 3;
-                float y = (i.uv.y * 2 - 1) * 3;
-
-                float4 circleColors = lerp(MinimumBrightness, MaximumBrightness, saturate(cos(x * y) + sin(x * y)));
+                float fn = saturate(fnSolutionSpace(i.uv, 1));
+                float4 circleColors = lerp(MinimumBrightness, MaximumBrightness, fn);
 
                 for (int p = 0; p < _TotalOptions; p += 1)
                 {

@@ -1,11 +1,7 @@
 // Solution space function
-float fnSolutionSpace (const float2 v)
+float fnSolutionSpace (float2 v, float2 size)
 {
-	float x = v.x;
-	float y = v.y;
+	v = ((v / size) * 2.f - 1.f) * 3.f;
 
-	x = ((x / OutputWidth) * 2 - 1) * 3;
-	y = ((y / OutputHeight) * 2 - 1) * 3;
-
-	return cos(x * y) + sin(x * y);
+	return cos(v.x * v.y) + sin(v.x * v.y);
 }

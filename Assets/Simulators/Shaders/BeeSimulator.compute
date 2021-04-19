@@ -6,7 +6,7 @@
 
 #define Inertia .5f
 #define MaxNeighbours 15
-#define MaxOptions 5
+#define MaxOptions 3
 #define MovementSpeed 1.f
 
 //

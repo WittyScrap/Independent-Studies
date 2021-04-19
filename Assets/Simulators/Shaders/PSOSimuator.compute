@@ -51,8 +51,8 @@ void iterate(inout float2 velocity, in float2 localBest, in float2 position, in 
 
 void plot(in float2 where)
 {
-    const float partcileAdd = 0.005f;
-    const int radius = 4;
+    const float partcileAdd = 0.003f;
+    const int radius = 5;
 
     ParticleSpace[where] += partcileAdd * 2;
 
@@ -85,15 +85,17 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     float2 position = Particles[x].position;
     float2 velocity = Particles[x].velocity;
 
+    float2 screen = float2(OutputWidth, OutputHeight);
+
 
     // Draw particle pixel
     plot(position);
 
 
     // Modified PSO simulation
-    float prevValue = fnSolutionSpace(Particles[x].localBest);
-    float bestValue = fnSolutionSpace(Particles[x].globalBest);
-    float currValue = fnSolutionSpace(position);
+    float prevValue = fnSolutionSpace(Particles[x].localBest, screen);
+    float bestValue = fnSolutionSpace(Particles[x].globalBest, screen);
+    float currValue = fnSolutionSpace(position, screen);
 
     Particles[x].localBest = iIf(currValue CMP prevValue, position, Particles[x].localBest);
     Particles[x].globalBest = iIf(currValue CMP bestValue, position, Particles[x].globalBest);
@@ -105,7 +107,7 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     );
 
     if (length(Particles[y].position - position) < CommsDistance &&
-        fnSolutionSpace(commsGlobalBest) CMP fnSolutionSpace(Particles[x].globalBest))
+        fnSolutionSpace(commsGlobalBest, screen) CMP fnSolutionSpace(Particles[x].globalBest, screen))
     { 
         Particles[x].globalBest = commsGlobalBest;
     }
