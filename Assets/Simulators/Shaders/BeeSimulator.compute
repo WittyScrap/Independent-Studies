@@ -41,6 +41,7 @@ StructuredBuffer<float4>        OptionsColors;
 int ParticlesCount;
 int OutputWidth;
 int OutputHeight;
+int Step;
 float CommsDistance;
 float SpawnRadius;
 
@@ -67,6 +68,11 @@ void plot(in float2 where, in float4 color)
             ParticleSpace[int2(x, y)] += color.rgb * (partcileAdd * (1 - (length(float2(x, y) - where) / (float)radius)));
         }
     }
+}
+
+float2 iIf(bool _condition, float2 _true, float2 _false)
+{
+    return (_condition * _true) + (!_condition * _false);
 }
 
 /** Kernels */
@@ -140,15 +146,17 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
         }
     }
 
-    particle.preference = bestOption;
+    particle.preference = iIf(Step > 0, bestOption, particle.preference);
     particle.strength = optionTrackers[bestOption].strength / (float)optionTrackers[bestOption].participants;
 
-    // Pick a random point to fly towards
+    // Pick a random point to fly towards, or fly towards the agreed answer
 
     float x = random(particle.position.xy + particle.velocity.yx) * 2 - 1;
     float y = random(particle.position.yx + particle.velocity.xy) * 2 - 1;
 
     float2 target = (float2(x, y) * SpawnRadius * 20) + (float2(OutputWidth, OutputHeight) / 2.f);
+    target = iIf(Step > 0, target, Options[particle.preference].xy * float2(OutputWidth, OutputHeight));
+
     particle.velocity = normalize(target - particle.position) * MovementSpeed;
 
     // Advance by current velocity

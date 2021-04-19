@@ -242,7 +242,6 @@ namespace Simulators
                     Debug.Break();
 				}
 #endif
-
                 _step = iterations;
             }
 
@@ -281,7 +280,7 @@ namespace Simulators
             }
 		}
 
-        private void Awake()
+        public void Awake()
         {
             _background = new Material(Shader.Find("Hidden/BeesBackground"));
             enabled = false;
@@ -295,23 +294,22 @@ namespace Simulators
 			}
         }
 
-        private void Update()
+        public void Update()
         {
-            if (_step > 0)
-            {
-                simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
-                simulator.Dispatch(_csSimulate, ParticlesCount / 512, 1, 1);
+            simulator.SetInt("Step", _step);
+            simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
+            simulator.Dispatch(_csSimulate, ParticlesCount / 512, 1, 1);
 
-                _step -= 1;
-            }
-            else if (!_hasFinalLocation)
+            if (_step <= 0 && !_hasFinalLocation)
 			{
                 FindFinalLocation();
                 _hasFinalLocation = true;
 			}
+            
+            _step -= 1;
         }
 
-		private void OnGUI()
+		public void OnGUI()
 		{
             const int CrosshairSize = 50;
             const int CrosshairThickness = 1;
@@ -326,12 +324,12 @@ namespace Simulators
             GUI.Box(new Rect(startX, pointY, CrosshairSize + CrosshairThickness, CrosshairThickness), string.Empty, _markerStyle);
 		}
 
-		private void OnRenderImage(RenderTexture source, RenderTexture destination)
+		public void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             Graphics.Blit(_particleSpace, destination, _background);
         }
 
-        private void OnDestroy()
+        public void OnDestroy()
         {
             if (_particleSpace)
             {
