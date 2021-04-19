@@ -225,7 +225,7 @@ namespace Simulators
                 enableRandomWrite = true
             }; 
             
-            const int DownsizeFactor = 8;
+            const int DownsizeFactor = 4;
 
             Texture2D pso = new Texture2D
             (
