@@ -6,6 +6,21 @@ using UnityEngine;
 /// </summary>
 public class UI : MonoBehaviour
 {
+    /// <summary>
+    /// A window that can display a graph that tracks one or more variables across a 2D
+    /// space.
+    /// </summary>
+    public class GraphWindow 
+    {
+        public readonly string XAxis;
+
+        public readonly string YAxis;
+
+        private readonly Texture2D _graph;
+
+        
+    }
+
     private static readonly string RestartText = "Restart...";
 
     [SerializeField]

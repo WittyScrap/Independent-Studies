@@ -44,6 +44,8 @@ namespace Simulators
 
         private static GUIStyle _markerStyle;
 
+        private UI _uiHandler;
+
         private int _optionsCount = 0;
 
         private Material _background;
@@ -223,7 +225,7 @@ namespace Simulators
             _particleSpace = new RenderTexture(output.width, output.height, sizeof(float) * 3, DefaultFormat.LDR)
             {
                 enableRandomWrite = true
-            }; 
+            };
             
             const int DownsizeFactor = 4;
 
@@ -284,6 +286,7 @@ namespace Simulators
         public void Awake()
         {
             _background = new Material(Shader.Find("Hidden/BeesBackground"));
+            _uiHandler = GetComponent<UI>();
             enabled = false;
 
             if (!_markerTexture)
