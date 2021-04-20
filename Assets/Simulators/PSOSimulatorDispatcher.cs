@@ -176,5 +176,19 @@ namespace Simulators
         {
             _bufferParticles.Release();
         }
+
+        public void OnGUI()
+        {
+            GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginVertical();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("PHASE 1 : PARTICLE SWARM OPTIMISATION");
+            GUILayout.EndVertical();
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
+        }
     }
 }

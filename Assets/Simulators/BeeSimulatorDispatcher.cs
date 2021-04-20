@@ -356,6 +356,17 @@ namespace Simulators
 
             GUI.Box(new Rect(pointX, startY, CrosshairThickness, CrosshairSize + CrosshairThickness), string.Empty, _markerStyle);
             GUI.Box(new Rect(startX, pointY, CrosshairSize + CrosshairThickness, CrosshairThickness), string.Empty, _markerStyle);
+            
+            GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginVertical();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("PHASE 2 : CONSENSUS SIMULATION");
+            GUILayout.EndVertical();
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
 		}
 
 		public void OnRenderImage(RenderTexture source, RenderTexture destination)
