@@ -57,6 +57,8 @@ namespace Simulators
 
         private int _step = 0;
 
+        private float _backgroundFade = 0;
+
         private Vector2 _finalLocation = -Vector2.one * 1000;
 
         private bool _hasFinalLocation = false;
@@ -136,7 +138,7 @@ namespace Simulators
 
                 if (_optionsCount == 1)
                 {
-                    _finalLocation = _options[0];
+                    _finalLocation = new Vector2(-1, 1) - (Vector2)_options[0];
                     Debug.Log($"Final position: {_finalLocation}; Final value: {detectedOptions[0].z}");
 				}
                 else
@@ -248,6 +250,7 @@ namespace Simulators
 				}
 #endif
                 _step = iterations;
+                _backgroundFade = 0;
                 
                 _graph = EditorWindow.GetWindow<UI.GraphWindow>();
                 _graph.Initialize(new Rect(0, 0, 700, 200), iterations, "Time", "Predominance");
@@ -325,6 +328,9 @@ namespace Simulators
 
         public void Update()
         {
+            _background.SetFloat("_Fade", _backgroundFade);
+            _backgroundFade += Time.deltaTime;
+
             simulator.SetInt("Step", _step);
             simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
             simulator.Dispatch(_csSimulate, ParticlesCount / 512, 1, 1);
@@ -362,7 +368,16 @@ namespace Simulators
             GUILayout.FlexibleSpace();
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
-            GUILayout.Label("PHASE 2 : CONSENSUS SIMULATION");
+
+            if (!_hasFinalLocation)
+            {
+                GUILayout.Label("PHASE 2 : CONSENSUS SIMULATION");
+            }
+            else
+            {
+                GUILayout.Label($"OPTIMUM = {_finalLocation}");
+            }
+            
             GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();

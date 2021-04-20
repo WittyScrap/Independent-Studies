@@ -48,10 +48,12 @@ Shader "Hidden/BeesBackground"
             sampler2D _PSO;
             float4 _Options[5];
             float4 _Colors[5];
+            float _Fade;
             int _TotalOptions;
             int _OutputSize;
 
             #include "SolutionSpace.cginc"
+            #define m 0.5f
 
             fixed4 frag (v2f i) : SV_Target
             {
@@ -66,7 +68,19 @@ Shader "Hidden/BeesBackground"
                 }
                 
                 float4 particles = tex2D(_MainTex, i.uv);
-                return circleColors + particles * ParticleBrightness;
+                float grid = (((i.uv.x * 5000) % 200 < 10) | ((i.uv.y * 5000) % 200 < 10)) * .025f;
+                
+                const float4 lowEnd = float4(m, m, 1, 1);
+                const float4 midEnd = float4(m, 1, m, 1);
+                const float4 highEnd = float4(1, m, m, 1);
+
+                float4 lowLerp = lerp(lowEnd, midEnd, saturate(fn * 2));
+                float4 highLerp = lerp(midEnd, highEnd, saturate(fn / 2 + .5f));
+                float4 colorful = lerp(lowLerp, highLerp, fn);
+
+                float4 baseColor = lerp(colorful, circleColors, saturate(_Fade));
+
+                return baseColor + particles * ParticleBrightness - grid;
             }
             ENDCG
         }
