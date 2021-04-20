@@ -83,13 +83,13 @@ namespace Simulators
         /// How many simulation steps should be performed.
         /// </summary>
         [Tooltip("How many simulation steps should be performed.")]
-        public int iterations = 1000;
+        public int iterations = 1500;
 
         /// <summary>
         /// The distance for communications.
         /// </summary>
         [Tooltip("The distance for communications.")]
-        public float commsDistance = 15.0f;
+        public float commsDistance = 1.0f;
 
         /// <summary>
         /// Whether or not the simulation should be paused when this

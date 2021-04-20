@@ -61,7 +61,7 @@ namespace Simulators
         /// The starting self-following coefficient.
         /// </summary>
         [Tooltip("The starting self-following coefficient.")]
-        public float c1 = 0.02f;
+        public float c1 = 0.05f;
 
         /// <summary>
         /// The starting social-following coefficient.
@@ -73,13 +73,13 @@ namespace Simulators
         /// How many simulation steps should be performed.
         /// </summary>
         [Tooltip("How many simulation steps should be performed.")]
-        public int iterations = 1000;
+        public int iterations = 1500;
 
         /// <summary>
         /// The distance for communications.
         /// </summary>
         [Tooltip("The distance for communications.")]
-        public float commsDistance = 15.0f;
+        public float commsDistance = 1.0f;
 
 
 #if UNITY_EDITOR
