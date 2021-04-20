@@ -6,7 +6,7 @@
 
 #define Inertia .5f
 #define MaxNeighbours 15
-#define MaxOptions 3
+#define MaxOptions 5
 #define MovementSpeed 1.f
 
 //
@@ -113,7 +113,9 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 
         for (i = 0; i < ParticlesCount && neighboursCount < MaxNeighbours; i += 1)
         {
-            if (length(Particles[i].position - particle.position) < CommsDistance)
+            float dst = length(Particles[i].position - particle.position);
+
+            if (dst < CommsDistance)
             {
                 neighbours[neighboursCount] = i;
                 neighboursCount += 1;
@@ -123,20 +125,14 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
         // Observe broadcast preference and its weight, tally up a count of which option
         // is the most preferred in the nearby area.
 
-        float2 seeder = particle.position.yx;
-
         for (i = 0; i < neighboursCount; i += 1)
         {
-            float strength = Particles[neighbours[i]].strength + random(seeder);
+            float strength = Particles[neighbours[i]].strength;
+
             optionTrackers[Particles[neighbours[i]].preference].strength += strength;
             optionTrackers[Particles[neighbours[i]].preference].participants += 1;
-
-            seeder = (seeder * strength * 2 - 1.f).yx;
         }
     }
-
-    optionTrackers[particle.preference].strength += particle.strength;
-    optionTrackers[particle.preference].participants += 1;
 
     // Pick best value, convert to it - if the best value ends up being the same as what we had, a no-conversion case
     // will be observed.

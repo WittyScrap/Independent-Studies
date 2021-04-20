@@ -360,6 +360,11 @@ namespace Simulators
 			{
                 _bufferColors.Dispose();
 			}
+
+            if (_graph != null)
+            {
+                _graph.Close();
+            }
         }
     }
 }
