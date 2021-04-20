@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEditor;
 using Int32 = System.Int32;
 using Single = System.Single;
 
@@ -246,7 +247,10 @@ namespace Simulators
 				}
 #endif
                 _step = iterations;
-                _graph.Show();
+                
+                _graph = EditorWindow.CreateWindow<UI.GraphWindow>();
+                _graph.Initialize(new Rect(0, 0, 500, 200), "Time", "Predominance");
+                _graph.titleContent = new GUIContent("Progress Graph");
             }
 
             Destroy(pso);
@@ -284,12 +288,30 @@ namespace Simulators
             }
 		}
 
+        private void AdvanceGraph()
+        {
+            if (_graph != null && _bufferParticles != null)
+            {
+                _bufferParticles.GetData(_particles);
+                var votes = new Single[_optionsCount];
+
+                for (int i = 0; i < ParticlesCount; i += 1)
+                {
+                    votes[_particles[i].preference] += 1;
+                }
+
+                for (int i = 0; i < _optionsCount; i += 1)
+                {
+                    _graph.Plot(votes[i] / ParticlesCount, OptionsColors[i]);
+                }
+
+                _graph.Advance();
+            }
+        }
+
         public void Awake()
         {
             _background = new Material(Shader.Find("Hidden/BeesBackground"));
-            _graph = new UI.GraphWindow(new Rect(0, 0, 500, 200), "Time", "Predominance");
-            _graph.titleContent = new GUIContent("Progress Graph");
-
             enabled = false;
 
             if (!_markerTexture)
@@ -307,7 +329,7 @@ namespace Simulators
             simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
             simulator.Dispatch(_csSimulate, ParticlesCount / 512, 1, 1);
 
-            _bufferParticles.GetData(_particles);
+            AdvanceGraph();
 
             if (_step <= 0 && !_hasFinalLocation)
 			{

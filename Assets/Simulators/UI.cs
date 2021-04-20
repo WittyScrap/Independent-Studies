@@ -1,6 +1,7 @@
 using UnityEngine.SceneManagement;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 /// <summary>
 /// Handles the creation, response, and interaction of various UI elements.
@@ -16,34 +17,49 @@ public class UI : MonoBehaviour
         /// <summary>
         /// The label to assign to the <c>X</c> axis.
         /// </summary>
-        public readonly string xAxis;
+        public string XAxis { get; private set; }
 
         /// <summary>
         /// The label to assign to the <c>Y</c> axis.
         /// </summary>
-        public readonly string yAxis;
+        public string YAxis { get; private set; }
 
         private const float FrameSize = 10;
 
-        private readonly Texture2D _graph;
+        private const int LabelsMargin = 30;
+
+        private Rect _window;
+
+        private Texture2D _graph;
 
         private int _cursor = 0;
 
         
-        public GraphWindow(in Rect window, in string xAxis, in string yAxis)
+        public void Initialize(in Rect window, in string xAxis, in string yAxis)
         {
-            this.xAxis = xAxis;
-            this.yAxis = yAxis;
+            XAxis = xAxis;
+            YAxis = yAxis;
+            
+            _window = window;
 
-            int width = Mathf.RoundToInt(position.width);
-            int height = Mathf.RoundToInt(position.height);
+            minSize = _window.size + new Vector2(0, LabelsMargin);
+            maxSize = minSize;
+
+            int width = Mathf.RoundToInt(_window.width);
+            int height = Mathf.RoundToInt(_window.height);
 
             _graph = new Texture2D(width, height);
         }
 
         public void OnGUI()
         {
-            GUI.DrawTexture(new Rect(Vector2.zero, position.size), _graph);
+            if (_graph)
+            {
+                GUI.Box(
+                    position:       new Rect(Vector2.zero, position.size),
+                    image:          _graph
+                );
+            }
         }
 
         public void OnDestroy()
@@ -56,7 +72,7 @@ public class UI : MonoBehaviour
         /// </summary>
         public void Plot(in float atY, in Color color)
         {
-            int y = Mathf.RoundToInt(atY * position.height);
+            int y = Mathf.RoundToInt(atY * _window.height);
             _graph.SetPixel(_cursor, y, color);
         }
 
@@ -66,6 +82,8 @@ public class UI : MonoBehaviour
         public void Advance(in int amount = 1)
         {
             _cursor = Mathf.Min(_cursor + amount, _graph.width);
+            _graph.Apply();
+            Repaint();
         }
     }
 
