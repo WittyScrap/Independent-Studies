@@ -248,9 +248,8 @@ namespace Simulators
 #endif
                 _step = iterations;
                 
-                _graph = EditorWindow.CreateWindow<UI.GraphWindow>();
-                _graph.Initialize(new Rect(0, 0, 500, 200), "Time", "Predominance");
-                _graph.titleContent = new GUIContent("Progress Graph");
+                _graph = EditorWindow.GetWindow<UI.GraphWindow>();
+                _graph.Initialize(new Rect(0, 0, 700, 200), iterations, "Time", "Predominance");
             }
 
             Destroy(pso);
@@ -302,7 +301,7 @@ namespace Simulators
 
                 for (int i = 0; i < _optionsCount; i += 1)
                 {
-                    _graph.Plot(votes[i] / ParticlesCount, OptionsColors[i]);
+                    _graph.Record(votes[i] / ParticlesCount, OptionsColors[i]);
                 }
 
                 _graph.Advance();
@@ -329,7 +328,10 @@ namespace Simulators
             simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
             simulator.Dispatch(_csSimulate, ParticlesCount / 512, 1, 1);
 
-            AdvanceGraph();
+            if (_step > 0)
+            {
+                AdvanceGraph();
+            }
 
             if (_step <= 0 && !_hasFinalLocation)
 			{
@@ -382,11 +384,6 @@ namespace Simulators
 			{
                 _bufferColors.Dispose();
 			}
-
-            if (_graph != null)
-            {
-                _graph.Close();
-            }
         }
     }
 }

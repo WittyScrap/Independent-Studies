@@ -54,7 +54,10 @@ Shader "Hidden/PSOBackground"
                 float4 lowLerp = lerp(lowEnd, midEnd, saturate(fn * 2));
                 float4 highLerp = lerp(midEnd, highEnd, saturate(fn / 2 + .5f));
 
-                return lerp(lowLerp, highLerp, fn) + tex2D(_MainTex, i.uv) - (((i.uv.x * 5000) % 200 < 10) | ((i.uv.y * 5000) % 200 < 10)) * .05f;
+                float particles = tex2D(_MainTex, i.uv).r * 2;
+
+                return lerp(lowLerp, highLerp, fn) + particles - 
+                        (((i.uv.x * 5000) % 200 < 10) | ((i.uv.y * 5000) % 200 < 10)) * .05f;
             }
             ENDCG
         }

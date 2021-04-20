@@ -26,39 +26,75 @@ public class UI : MonoBehaviour
 
         private const float FrameSize = 10;
 
-        private const int LabelsMargin = 30;
-
         private Rect _window;
 
         private Texture2D _graph;
 
         private int _cursor = 0;
 
-        
-        public void Initialize(in Rect window, in string xAxis, in string yAxis)
+        private int _range;
+
+        private int _filler = 0;
+
+        private int _step = 1;
+
+
+        [MenuItem("Simulation/Progress Graph")]
+        private static void Create()
         {
+            EditorWindow.GetWindow<GraphWindow>().Show();
+        }
+        
+        public void Initialize(in Rect window, in int range, in string xAxis, in string yAxis,
+            in int expand = 1)
+        {
+            _cursor = 0;
+
             XAxis = xAxis;
             YAxis = yAxis;
-            
+
             _window = window;
+            _range = range;
 
-            minSize = _window.size + new Vector2(0, LabelsMargin);
-            maxSize = minSize;
+            if (_graph != null)
+            {
+                Destroy(_graph);
+            }
 
-            int width = Mathf.RoundToInt(_window.width);
-            int height = Mathf.RoundToInt(_window.height);
+            _graph = new Texture2D(range * expand, Mathf.RoundToInt(_window.height));
+            titleContent = new GUIContent("Progress Graph");
 
-            _graph = new Texture2D(width, height);
+            _step = expand;
         }
 
         public void OnGUI()
         {
             if (_graph)
             {
-                GUI.Box(
+                const float BorderRadius = 10;
+
+                GUI.DrawTexture(
                     position:       new Rect(Vector2.zero, position.size),
-                    image:          _graph
+                    image:          _graph,
+                    scaleMode:      ScaleMode.ScaleToFit,
+                    alphaBlend:     false,
+                    imageAspect:    0,
+                    color:          Color.white,
+                    borderWidth:    0,
+                    borderRadius:   BorderRadius
                 );
+            }
+            else
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                GUILayout.BeginVertical();
+                GUILayout.FlexibleSpace();
+                GUILayout.Label("No simulation data");
+                GUILayout.FlexibleSpace();
+                GUILayout.EndVertical();
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
             }
         }
 
@@ -68,12 +104,28 @@ public class UI : MonoBehaviour
         }
 
         /// <summary>
-        /// Plots a new entry of value Y at the current cursor position, without advancing it.
+        /// Plots a new entry at the current cursor position, without advancing it.
         /// </summary>
-        public void Plot(in float atY, in Color color)
+        public void Record(in float amount, in Color color)
         {
-            int y = Mathf.RoundToInt(atY * _window.height);
-            _graph.SetPixel(_cursor, y, color);
+            int pixels = Mathf.RoundToInt(amount * _window.height);
+            int overflow = (_filler + pixels) - _graph.height;
+
+            if (overflow > 0)
+            {
+                pixels -= overflow;
+            }
+
+            Color[] colors = Enumerable.Repeat(color, pixels).ToArray();
+            Color brightness = new Color(0.25f, 0.25f, 0.25f, 1.0f);
+
+            for (int i = 0; i < colors.Length; i += 1)
+            {
+                colors[i] += Color.grey + (brightness * (1 - (float)i / colors.Length));
+            }
+
+            _graph.SetPixels(_cursor, _filler, 1, pixels, colors, 0);
+            _filler = Mathf.Min(_filler + pixels, _graph.height - 1);
         }
 
         /// <summary>
@@ -81,7 +133,8 @@ public class UI : MonoBehaviour
         /// </summary>
         public void Advance(in int amount = 1)
         {
-            _cursor = Mathf.Min(_cursor + amount, _graph.width);
+            _filler = 0;
+            _cursor = Mathf.Min(_cursor + amount * _step, _graph.width - 1);
             _graph.Apply();
             Repaint();
         }
