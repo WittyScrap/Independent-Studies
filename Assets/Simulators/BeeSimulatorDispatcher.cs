@@ -44,7 +44,7 @@ namespace Simulators
 
         private static GUIStyle _markerStyle;
 
-        private UI _uiHandler;
+        private UI.GraphWindow _graph;
 
         private int _optionsCount = 0;
 
@@ -246,6 +246,7 @@ namespace Simulators
 				}
 #endif
                 _step = iterations;
+                _graph.Show();
             }
 
             Destroy(pso);
@@ -286,7 +287,9 @@ namespace Simulators
         public void Awake()
         {
             _background = new Material(Shader.Find("Hidden/BeesBackground"));
-            _uiHandler = GetComponent<UI>();
+            _graph = new UI.GraphWindow(new Rect(0, 0, 500, 200), "Time", "Predominance");
+            _graph.titleContent = new GUIContent("Progress Graph");
+
             enabled = false;
 
             if (!_markerTexture)
@@ -303,6 +306,8 @@ namespace Simulators
             simulator.SetInt("Step", _step);
             simulator.Dispatch(_csDissipate, _particleSpace.width / 32, _particleSpace.height / 32, 1);
             simulator.Dispatch(_csSimulate, ParticlesCount / 512, 1, 1);
+
+            _bufferParticles.GetData(_particles);
 
             if (_step <= 0 && !_hasFinalLocation)
 			{
