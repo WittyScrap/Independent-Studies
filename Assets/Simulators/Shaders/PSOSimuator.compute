@@ -24,6 +24,7 @@ RWStructuredBuffer<Particle>    Particles;
 
 int OutputWidth;
 int OutputHeight;
+int ParticlesCount;
 
 float W;
 float C1;
@@ -51,7 +52,7 @@ void iterate(inout float2 velocity, in float2 localBest, in float2 position, in 
 
 void plot(in float2 where)
 {
-    const float partcileAdd = 0.003f;
+    const float partcileAdd = 0.05f;
     const int radius = 5;
 
     ParticleSpace[where] += partcileAdd * 2;
@@ -75,12 +76,11 @@ float2 iIf(bool _condition, float2 _true, float2 _false)
 // PSO kernel
 // 
 // Runs the Particle Swarm Optimisation algorithm.
-[numthreads(32,32,1)]
+[numthreads(1024,1,1)]
 void CSSimulate (uint3 id : SV_DispatchThreadID)
 {
     // Gather particle data
     int x = id.x;
-    int y = id.y;
 
     float2 position = Particles[x].position;
     float2 velocity = Particles[x].velocity;
@@ -100,16 +100,19 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     Particles[x].localBest = iIf(currValue CMP prevValue, position, Particles[x].localBest);
     Particles[x].globalBest = iIf(currValue CMP bestValue, position, Particles[x].globalBest);
 
-    float2 commsGlobalBest = Particles[y].globalBest + float2 // Add a random error amount
-    (
-        random(float2(Particles[x].position.x, Particles[y].position.y)) * 2.f - 1,
-        random(float2(Particles[y].position.y, Particles[x].position.x)) * 2.f - 1
-    );
+    for (int y = 0; y < ParticlesCount; y += 1)
+    {
+        float2 commsGlobalBest = Particles[y].globalBest + float2 // Add a random error amount
+        (
+            random(float2(Particles[x].position.x, Particles[y].position.y)) * 2.f - 1,
+            random(float2(Particles[y].position.y, Particles[x].position.x)) * 2.f - 1
+        );
 
-    if (length(Particles[y].position - position) < CommsDistance &&
-        fnSolutionSpace(commsGlobalBest, screen) CMP fnSolutionSpace(Particles[x].globalBest, screen))
-    { 
-        Particles[x].globalBest = commsGlobalBest;
+        if (length(Particles[y].position - position) < CommsDistance &&
+            fnSolutionSpace(commsGlobalBest, screen) CMP fnSolutionSpace(Particles[x].globalBest, screen))
+        { 
+            Particles[x].globalBest = commsGlobalBest;
+        }
     }
  
     iterate(velocity, Particles[x].localBest, position, Particles[x].globalBest);

@@ -83,6 +83,21 @@ public class UI : MonoBehaviour
                     borderWidth:    0,
                     borderRadius:   BorderRadius
                 );
+
+                Color previous = GUI.contentColor;
+                GUI.contentColor = Color.black;
+
+                // X-Axis label
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                GUILayout.BeginVertical();
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(XAxis);
+                GUILayout.EndVertical();
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
+                
+                GUI.contentColor = previous;
             }
             else
             {
@@ -125,7 +140,7 @@ public class UI : MonoBehaviour
             }
 
             _graph.SetPixels(_cursor, _filler, 1, pixels, colors, 0);
-            _filler = Mathf.Min(_filler + pixels, _graph.height - 1);
+            _filler = Mathf.Min(_filler + pixels, _graph.height);
         }
 
         /// <summary>
@@ -134,7 +149,7 @@ public class UI : MonoBehaviour
         public void Advance(in int amount = 1)
         {
             _filler = 0;
-            _cursor = Mathf.Min(_cursor + amount * _step, _graph.width - 1);
+            _cursor = Mathf.Min(_cursor + amount * _step, _graph.width);
             _graph.Apply();
             Repaint();
         }

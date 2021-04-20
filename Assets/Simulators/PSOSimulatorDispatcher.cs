@@ -26,7 +26,7 @@ namespace Simulators
 
         private const int OutputHeight = 512;
 
-        private const int ParticlesCount = 512;
+        private const int ParticlesCount = 1024;
 
         private ComputeBuffer _bufferParticles;
 
@@ -125,6 +125,7 @@ namespace Simulators
 
             simulator.SetInt("OutputWidth", OutputWidth);
             simulator.SetInt("OutputHeight", OutputHeight);
+            simulator.SetInt("ParticlesCount", ParticlesCount);
             simulator.SetFloat("C1", c1);
             simulator.SetFloat("C2", c2);
             simulator.SetFloat("CommsDistance", commsDistance);
@@ -157,7 +158,7 @@ namespace Simulators
                 _step -= 1;
 
                 simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
-                simulator.Dispatch(_csSimulate, ParticlesCount / 32, ParticlesCount / 32, 1);
+                simulator.Dispatch(_csSimulate, Mathf.Min(1, ParticlesCount / 1024), 1, 1);
             }
             else if (!_completed)
             {
