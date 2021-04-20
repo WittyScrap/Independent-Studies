@@ -154,6 +154,7 @@ namespace Simulators
             _background.SetVectorArray("_Options", _options);
             _background.SetColorArray("_Colors", OptionsColors);
             _background.SetInt("_TotalOptions", _optionsCount);
+            _background.SetInt("_OutputSize", _particleSpace.width);
 
             const float SpawnRadius = 50;
 
@@ -161,7 +162,7 @@ namespace Simulators
             for (int i = 0; i < ParticlesCount; i += 1)
             {
                 // Increase entropy by increasing the number of possible outcomes
-                int choice = UnityEngine.Random.Range(0, _optionsCount * 50) % (_optionsCount - 1);
+                int choice = UnityEngine.Random.Range(0, _optionsCount * 50) % _optionsCount;
 
                 _particles[i].position = _particleSpace.GetSize() / 2 + UnityEngine.Random.insideUnitCircle * SpawnRadius;
                 _particles[i].velocity = VectorExtensions.RandomUnitCircumference();

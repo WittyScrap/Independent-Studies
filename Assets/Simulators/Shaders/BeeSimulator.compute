@@ -9,6 +9,8 @@
 #define MaxOptions 5
 #define MovementSpeed 1.f
 
+#include "BeeVisualisation.cginc"
+
 //
 //  Represents a single particle for the Particle Swarm Optimisation
 //  based algorithm.
@@ -155,8 +157,12 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     float x = random(particle.position.xy + particle.velocity.yx) * 2 - 1;
     float y = random(particle.position.yx + particle.velocity.xy) * 2 - 1;
 
+    float2 option = Options[particle.preference].xy * float2(OutputWidth, OutputHeight);
+    option += float2(random(particle.position.xy + particle.velocity.yx) * 2 - 1,
+                     random(particle.position.yx + particle.velocity.xy) * 2 - 1) * OptionRadius * 2;
+
     float2 target = (float2(x, y) * SpawnRadius * 20) + (float2(OutputWidth, OutputHeight) / 2.f);
-    target = iIf(Step > 0, target, Options[particle.preference].xy * float2(OutputWidth, OutputHeight));
+    target = iIf(Step > 0, target, option);
 
     particle.velocity = normalize(target - particle.position) * MovementSpeed;
 
