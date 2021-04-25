@@ -103,13 +103,13 @@ namespace Simulators
         /// The starting and minimum inertial coefficient.
         /// </summary>
         [Tooltip("The minimum and maximum stubborness modifiers."), MinMaxSlider(-0.1f, 0.1f)]
-        public Vector2 stubborness = new Vector2(-0.01f, 0.01f);
+        public Vector2 stubborness = new Vector2(-0f, 0f);
 
         /// <summary>
         /// The frequency by which a cross-inhibitory signal should be emitted.
         /// </summary>
         [Tooltip("The frequency by which a cross-inhibitory signal should be emitted."), Range(0, 1)]
-        public float crossInhibitoryFrequence = 0.5f;
+        public float crossInhibitoryFrequency = 0f;
 
         /// <summary>
         /// Whether or not the simulation should be paused when this
@@ -210,7 +210,7 @@ namespace Simulators
             simulator.SetFloat("CommsDistance", commsDistance);
             simulator.SetFloat("SpawnRadius", SpawnRadius);
             simulator.SetFloat("CommsStrength", waggleDanceStrength);
-            simulator.SetFloat("CrossInhibitoryFrequence", crossInhibitoryFrequence);
+            simulator.SetFloat("CrossInhibitoryFrequence", crossInhibitoryFrequency);
             simulator.SetInt("ParticlesCount", ParticlesCount);
             simulator.SetInt("OutputWidth", _particleSpace.width);
             simulator.SetInt("OutputHeight", _particleSpace.height);
