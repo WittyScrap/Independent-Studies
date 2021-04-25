@@ -21,6 +21,7 @@ struct Particle
     float2 velocity;
     int    preference;
     float  strength;
+    float  stubborness;
 };
 
 //
@@ -46,6 +47,8 @@ int OutputHeight;
 int Step;
 float CommsDistance;
 float SpawnRadius;
+float CommsStrength;
+float CrossInhibitoryFrequence;
 
 
 /** Functions */ 
@@ -129,10 +132,21 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 
         for (i = 0; i < neighboursCount; i += 1)
         {
-            float strength = Particles[neighbours[i]].strength;
+            Particle neighbour = Particles[neighbours[i]];
 
-            optionTrackers[Particles[neighbours[i]].preference].strength += strength;
-            optionTrackers[Particles[neighbours[i]].preference].participants += 1;
+            if (i > 0 && random(neighbour.position) < CrossInhibitoryFrequence)
+            {
+                // Send a cross-inhibitory signal and cut-off the strength from the previous
+                // neighbour's preference option
+                Particle previous = Particles[neighbours[i - 1]];
+
+                optionTrackers[previous.preference].strength -= previous.strength * CommsStrength;
+                optionTrackers[previous.preference].participants -= 1;
+            }
+
+            // Perform "waggle-dance" and communicate new option
+            optionTrackers[neighbour.preference].strength += neighbour.strength * CommsStrength;
+            optionTrackers[neighbour.preference].participants += 1;
         }
     }
 
@@ -149,8 +163,17 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
         }
     }
 
-    particle.preference = iIf(Step > 0, bestOption, particle.preference);
-    particle.strength = optionTrackers[bestOption].strength / (float)optionTrackers[bestOption].participants;
+    if (bestOption != particle.preference && optionTrackers[bestOption].strength > particle.strength)
+    {
+        particle.preference = iIf(Step > 0, bestOption, particle.preference);
+        particle.strength = 
+                optionTrackers[bestOption].strength / 
+         (float)optionTrackers[bestOption].participants;
+    }
+    else
+    {
+        particle.strength += random(particle.position) * particle.stubborness;
+    }
 
     // Pick a random point to fly towards, or fly towards the agreed answer
 
@@ -158,6 +181,7 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     float y = random(particle.position.yx + particle.velocity.xy) * 2 - 1;
 
     float2 option = Options[particle.preference].xy * float2(OutputWidth, OutputHeight);
+
     option += float2(random(particle.position.xy + particle.velocity.yx) * 2 - 1,
                      random(particle.position.yx + particle.velocity.xy) * 2 - 1) * OptionRadius * 2;
 

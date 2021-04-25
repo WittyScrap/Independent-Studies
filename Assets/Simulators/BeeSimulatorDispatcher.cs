@@ -24,6 +24,8 @@ namespace Simulators
             public Int32        preference;
 
             public Single       strength;
+
+            public Single       stubborness;
         };
 
         private const int MaxOptions = 5;
@@ -90,6 +92,24 @@ namespace Simulators
         /// </summary>
         [Tooltip("The distance for communications.")]
         public float commsDistance = 1.0f;
+        
+        /// <summary>
+        /// A strength multiplier for communications.
+        /// </summary>
+        [Tooltip("The distance for communications."), Range(0, 1)]
+        public float commsMultiplier = 1.0f;
+        
+        /// <summary>
+        /// The starting and minimum inertial coefficient.
+        /// </summary>
+        [Tooltip("The minimum and maximum stubborness modifiers."), MinMaxSlider(-0.1f, 0.1f)]
+        public Vector2 stubborness = new Vector2(-0.01f, 0.01f);
+
+        /// <summary>
+        /// The frequency by which a cross-inhibitory signal should be emitted.
+        /// </summary>
+        [Tooltip("The frequency by which a cross-inhibitory signal should be emitted."), Range(0, 1)]
+        public float crossInhibitoryFrequence = 0.5f;
 
         /// <summary>
         /// Whether or not the simulation should be paused when this
@@ -170,6 +190,7 @@ namespace Simulators
                 _particles[i].velocity = VectorExtensions.RandomUnitCircumference();
                 _particles[i].preference = choice;
                 _particles[i].strength = UnityEngine.Random.value;
+                _particles[i].stubborness = UnityEngine.Random.Range(stubborness.x, stubborness.y);
             }
 
 
@@ -188,6 +209,8 @@ namespace Simulators
 
             simulator.SetFloat("CommsDistance", commsDistance);
             simulator.SetFloat("SpawnRadius", SpawnRadius);
+            simulator.SetFloat("CommsStrength", commsMultiplier);
+            simulator.SetFloat("CrossInhibitoryFrequence", crossInhibitoryFrequence);
             simulator.SetInt("ParticlesCount", ParticlesCount);
             simulator.SetInt("OutputWidth", _particleSpace.width);
             simulator.SetInt("OutputHeight", _particleSpace.height);
