@@ -94,10 +94,10 @@ namespace Simulators
         public float commsDistance = 1.0f;
         
         /// <summary>
-        /// A strength multiplier for communications.
+        /// A multiplier to determine the efficacy of the waggle dance.
         /// </summary>
-        [Tooltip("The distance for communications."), Range(0, 1)]
-        public float commsMultiplier = 1.0f;
+        [Tooltip("A multiplier to determine the efficacy of the waggle dance."), Range(0, 1)]
+        public float waggleDanceStrength = 1.0f;
         
         /// <summary>
         /// The starting and minimum inertial coefficient.
@@ -209,7 +209,7 @@ namespace Simulators
 
             simulator.SetFloat("CommsDistance", commsDistance);
             simulator.SetFloat("SpawnRadius", SpawnRadius);
-            simulator.SetFloat("CommsStrength", commsMultiplier);
+            simulator.SetFloat("CommsStrength", waggleDanceStrength);
             simulator.SetFloat("CrossInhibitoryFrequence", crossInhibitoryFrequence);
             simulator.SetInt("ParticlesCount", ParticlesCount);
             simulator.SetInt("OutputWidth", _particleSpace.width);
