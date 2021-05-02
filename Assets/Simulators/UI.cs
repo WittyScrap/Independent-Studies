@@ -2,6 +2,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using System.IO;
 
 /// <summary>
 /// Handles the creation, response, and interaction of various UI elements.
@@ -65,6 +66,23 @@ public class UI : MonoBehaviour
             titleContent = new GUIContent("Progress Graph");
 
             _step = expand;
+        }
+
+        /// <summary>
+        /// Saves the contents of this graph as a picture.
+        /// </summary>
+        public void Save()
+        {
+            string path = EditorUtility.SaveFilePanel
+            (
+                title: "Save graph as PNG",
+                directory: "",
+                defaultName: "graph.png",
+                extension: "png"
+            );
+
+            byte[] texture = _graph.EncodeToPNG();
+            File.WriteAllBytes(path, texture);
         }
 
         public void OnGUI()

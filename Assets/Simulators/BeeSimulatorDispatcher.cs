@@ -94,16 +94,16 @@ namespace Simulators
         public float commsDistance = 1.0f;
         
         /// <summary>
-        /// A multiplier to determine the efficacy of the waggle dance.
-        /// </summary>
-        [Tooltip("A multiplier to determine the efficacy of the waggle dance."), Range(0, 1)]
-        public float waggleDanceStrength = 1.0f;
-        
-        /// <summary>
         /// The starting and minimum inertial coefficient.
         /// </summary>
         [Tooltip("The minimum and maximum stubborness modifiers."), MinMaxSlider(-0.1f, 0.1f)]
         public Vector2 stubborness = new Vector2(-0f, 0f);
+        
+        /// <summary>
+        /// A multiplier to determine the efficacy of the waggle dance.
+        /// </summary>
+        [Tooltip("A multiplier to determine the efficacy of the waggle dance."), Range(0, 1)]
+        public float waggleDanceStrength = 1.0f;
 
         /// <summary>
         /// The frequency by which a cross-inhibitory signal should be emitted.
@@ -276,7 +276,7 @@ namespace Simulators
                 _backgroundFade = 0;
                 
                 _graph = EditorWindow.GetWindow<UI.GraphWindow>();
-                _graph.Initialize(new Rect(0, 0, 700, 200), iterations, "Time", "Predominance");
+                _graph.Initialize(new Rect(0, 0, 100, 200), iterations, "Time", "Predominance");
             }
 
             Destroy(pso);
@@ -367,6 +367,7 @@ namespace Simulators
 			{
                 FindFinalLocation();
                 _hasFinalLocation = true;
+                _graph.Save();
 			}
             
             _step -= 1;
