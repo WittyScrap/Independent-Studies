@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using System.IO;
+using static System.Uri;
 
 /// <summary>
 /// Handles the creation, response, and interaction of various UI elements.
@@ -81,8 +82,11 @@ public class UI : MonoBehaviour
                 extension: "png"
             );
 
-            byte[] texture = _graph.EncodeToPNG();
-            File.WriteAllBytes(path, texture);
+            if (IsWellFormedUriString(path, System.UriKind.Absolute))
+            {
+                byte[] texture = _graph.EncodeToPNG();
+                File.WriteAllBytes(path, texture);
+            }
         }
 
         public void OnGUI()
