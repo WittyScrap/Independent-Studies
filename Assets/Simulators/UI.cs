@@ -71,7 +71,7 @@ public class UI : MonoBehaviour
         /// <summary>
         /// Saves the contents of this graph as a picture.
         /// </summary>
-        public void Save()
+        public bool Save()
         {
             string path = EditorUtility.SaveFilePanel
             (
@@ -85,7 +85,11 @@ public class UI : MonoBehaviour
             {
                 byte[] texture = _graph.EncodeToPNG();
                 File.WriteAllBytes(path, texture);
+
+                return true;
             }
+
+            return false;
         }
 
         public void OnGUI()

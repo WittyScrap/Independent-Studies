@@ -354,11 +354,10 @@ namespace Simulators
         {
             if (Keyboard.current.f12Key.wasPressedThisFrame)
             {
-#if DEBUG
-                Debug.Log("Saving screenshot...");
-#endif
-
-                _graph.Save();
+                if (_graph.Save())
+                {
+                    Debug.Log("Screenshot saved!");
+                }
             }
 
             _background.SetFloat("_Fade", _backgroundFade);
