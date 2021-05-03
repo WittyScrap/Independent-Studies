@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Experimental.Rendering;
 using UnityEditor;
 using Int32 = System.Int32;
@@ -351,6 +352,11 @@ namespace Simulators
 
         public void Update()
         {
+            if (Keyboard.current.f12Key.wasPressedThisFrame)
+            {
+                _graph.SaveChanges();
+            }
+
             _background.SetFloat("_Fade", _backgroundFade);
             _backgroundFade += Time.deltaTime;
 
@@ -367,7 +373,6 @@ namespace Simulators
 			{
                 FindFinalLocation();
                 _hasFinalLocation = true;
-                _graph.Save();
 			}
             
             _step -= 1;
