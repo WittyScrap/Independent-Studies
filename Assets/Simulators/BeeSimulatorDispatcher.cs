@@ -352,12 +352,9 @@ namespace Simulators
 
         public void Update()
         {
-            if (Keyboard.current.f12Key.wasPressedThisFrame)
+            if (Keyboard.current.f12Key.wasPressedThisFrame && _graph.Save())
             {
-                if (_graph.Save())
-                {
-                    Debug.Log("Screenshot saved!");
-                }
+                Debug.Log("Screenshot saved!");
             }
 
             _background.SetFloat("_Fade", _backgroundFade);

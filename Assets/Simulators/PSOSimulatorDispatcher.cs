@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEditor;
 
 namespace Simulators
 {
@@ -144,8 +146,32 @@ namespace Simulators
             Destroy(this); // Change da world. My final message. Goodbye.
         }
 
+        private static bool SaveScreenshot()
+        {
+            string path = EditorUtility.SaveFilePanel
+            (
+                title: "Save map as PNG",
+                directory: "",
+                defaultName: "map.png",
+                extension: "png"
+            );
+
+            if (path != null)
+            {
+                ScreenCapture.CaptureScreenshot(path);
+                return true;
+            }
+
+            return false;
+        }
+
         public void Update()
         {
+            if (Keyboard.current.f12Key.wasPressedThisFrame && SaveScreenshot())
+            {
+                Debug.Log("Screenshot Taken!");
+            }
+
             if (_step > 0)
             {
                 simulator.SetFloat("W", w.y);
