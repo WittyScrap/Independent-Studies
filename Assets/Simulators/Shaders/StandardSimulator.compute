@@ -7,29 +7,29 @@
 
 //
 //  Represents a single particle for the Particle Swarm Optimisation
-//  based algorithm.
+//  algorithm.
 //
 struct Particle
 {
     float2 position;
     float2 velocity;
     float2 localBest;
-    float2 globalBest;
 };
 
 /** Data */
 
 RWTexture2D<float3>             ParticleSpace;
 RWStructuredBuffer<Particle>    Particles;
+RWStructuredBuffer<float3>      Reports;
+
+float4 GlobalBest;
 
 int OutputWidth;
 int OutputHeight;
-int ParticlesCount;
 
 float W;
 float C1;
 float C2;
-float CommsDistance;
 
 
 /** Functions */ 
@@ -92,30 +92,19 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
     plot(position);
 
 
-    // Modified PSO simulation
+    // PSO simulation
+    iterate(velocity, Particles[x].localBest, position, GlobalBest.xy);
+
     float prevValue = fnSolutionSpace(Particles[x].localBest, screen);
-    float bestValue = fnSolutionSpace(Particles[x].globalBest, screen);
+    float bestValue = fnSolutionSpace(GlobalBest.xy, screen);
     float currValue = fnSolutionSpace(position, screen);
 
     Particles[x].localBest = iIf(currValue CMP prevValue, position, Particles[x].localBest);
-    Particles[x].globalBest = iIf(currValue CMP bestValue, position, Particles[x].globalBest);
+    currValue = fnSolutionSpace(Particles[x].localBest, screen);
 
-    for (int y = 0; y < ParticlesCount; y += 1)
-    {
-        float2 commsGlobalBest = Particles[y].globalBest + float2 // Add a random error amount
-        (
-            random(float2(Particles[x].position.x, Particles[y].position.y)) * 2.f - 1,
-            random(float2(Particles[y].position.y, Particles[x].position.x)) * 2.f - 1
-        );
-
-        if (length(Particles[y].position - position) < CommsDistance &&
-            fnSolutionSpace(commsGlobalBest, screen) CMP fnSolutionSpace(Particles[x].globalBest, screen))
-        { 
-            Particles[x].globalBest = commsGlobalBest;
-        }
-    }
- 
-    iterate(velocity, Particles[x].localBest, position, Particles[x].globalBest);
+    float2 globalBest = iIf(currValue CMP bestValue, Particles[x].localBest, GlobalBest.xy);
+    bestValue = fnSolutionSpace(globalBest, screen);
+    Reports[x] = float3(globalBest, bestValue);
 
     
     // Advance by current velocity

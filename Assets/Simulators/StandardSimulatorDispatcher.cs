@@ -11,7 +11,7 @@ namespace Simulators
     /// <summary>
     /// Handles dispatching initialisation data and commands to the PSO simulation compute shader.
     /// </summary>
-    public sealed class PSOSimulatorDispatcher : MonoBehaviour
+    public sealed class StandardSimulatorDispatcher : MonoBehaviour
     {
         private struct Particle
         {
@@ -20,8 +20,6 @@ namespace Simulators
             public Vector2 velocity;
 
             public Vector2 localBest;
-
-            public Vector2 globalBest;
         }
 
         private const int OutputWidth = 512;
@@ -32,6 +30,8 @@ namespace Simulators
 
         private ComputeBuffer _bufferParticles;
 
+        private ComputeBuffer _bufferReports;
+
         public RenderTexture _particleSpace;
 
         private int _csSimulate;
@@ -39,6 +39,8 @@ namespace Simulators
         private int _csDissipate;
 
         private Particle[] _psoParticles = new Particle[ParticlesCount];
+
+        private Vector3[] _psoReports = new Vector3[ParticlesCount];
 
         private float _decay;
 
@@ -77,12 +79,6 @@ namespace Simulators
         [Tooltip("How many simulation steps should be performed.")]
         public int iterations = 1500;
 
-        /// <summary>
-        /// The distance for communications.
-        /// </summary>
-        [Tooltip("The distance for communications.")]
-        public float commsDistance = 1.0f;
-
 
 #if UNITY_EDITOR
         private void Start()
@@ -112,11 +108,13 @@ namespace Simulators
                 _psoParticles[i].position = middle + (UnityEngine.Random.insideUnitCircle * SpawnRadius);
                 _psoParticles[i].velocity = VectorExtensions.RandomUnitCircumference() * InitialVelocity;
                 _psoParticles[i].localBest = _psoParticles[i].position;
-                _psoParticles[i].globalBest = _psoParticles[i].position;
             }
 
             _bufferParticles = new ComputeBuffer(ParticlesCount, sizeof(Particle));
             _bufferParticles.SetData(_psoParticles);
+
+            _bufferReports = new ComputeBuffer(ParticlesCount, sizeof(Vector3));
+            _bufferReports.SetData(_psoReports);
 
             _particleSpace = new RenderTexture(OutputWidth, OutputHeight, sizeof(float) * 3, DefaultFormat.LDR)
             {
@@ -130,7 +128,7 @@ namespace Simulators
             simulator.SetInt("ParticlesCount", ParticlesCount);
             simulator.SetFloat("C1", c1);
             simulator.SetFloat("C2", c2);
-            simulator.SetFloat("CommsDistance", commsDistance);
+            simulator.SetVector("GlobalBest", Vector4.zero);
 
             _csSimulate = simulator.FindKernel("CSSimulate");
             _csDissipate = simulator.FindKernel("CSDissipate");
@@ -138,12 +136,7 @@ namespace Simulators
             simulator.SetTexture(_csSimulate, "ParticleSpace", _particleSpace, 0);
             simulator.SetTexture(_csDissipate, "ParticleSpace", _particleSpace, 0);
             simulator.SetBuffer(_csSimulate, "Particles", _bufferParticles);
-        }
-
-        private void Advance()
-        {
-            GetComponent<BeeSimulatorDispatcher>().Initialize(_particleSpace);
-            Destroy(this); // Change da world. My final message. Goodbye.
+            simulator.SetBuffer(_csSimulate, "Reports", _bufferReports);
         }
 
         private static bool SaveScreenshot()
@@ -185,10 +178,25 @@ namespace Simulators
 
                 simulator.Dispatch(_csDissipate, OutputWidth / 32, OutputHeight / 32, 1);
                 simulator.Dispatch(_csSimulate, Mathf.Min(1, ParticlesCount / 1024), 1, 1);
+
+                // Read back report data and establish new global best
+                _bufferReports.GetData(_psoReports);
+
+                Vector3 globalBest = _psoReports[0];
+
+                for (int i = 1; i < _psoReports.Length; i += 1)
+                {
+                    // Comparison is assumed here for the sake of simplicity
+                    if (_psoReports[i].z < globalBest.z)
+                    {
+                        globalBest = _psoReports[i];
+                    }
+                }
+
+                simulator.SetVector("GlobalBest", globalBest);
             }
             else if (!_completed)
             {
-                Advance();
                 _completed = true;
             }
         }
@@ -201,6 +209,7 @@ namespace Simulators
         public void OnDestroy()
         {
             _bufferParticles.Release();
+            _bufferReports.Release();
         }
 
         public void OnGUI()
@@ -210,7 +219,7 @@ namespace Simulators
             GUILayout.FlexibleSpace();
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
-            GUILayout.Label("PHASE 1 : PARTICLE SWARM OPTIMISATION");
+            GUILayout.Label("CONTROL : PARTICLE SWARM OPTIMISATION");
             GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();

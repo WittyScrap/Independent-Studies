@@ -136,9 +136,12 @@ void CSSimulate (uint3 id : SV_DispatchThreadID)
 
             if (i > 0 && random(neighbour.position) < CrossInhibitoryFrequence)
             {
-                // Send a cross-inhibitory signal and cut-off the strength from the previous
-                // neighbour's preference option
-                Particle previous = Particles[neighbours[i - 1]];
+                float rndPos = random(neighbour.position.yx);
+                int target = (int)(rndPos * (i - 1));
+
+                // Send a cross-inhibitory signal and cut-off the strength from a random neighbour's
+                // preference option
+                Particle previous = Particles[neighbours[target]];
 
                 optionTrackers[previous.preference].strength -= previous.strength * CommsStrength;
                 optionTrackers[previous.preference].participants -= 1;
